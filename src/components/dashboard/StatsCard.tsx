@@ -9,37 +9,49 @@ interface StatsCardProps {
   icon: LucideIcon;
   trend?: string;
   trendUp?: boolean;
-  color?: 'indigo' | 'emerald' | 'amber' | 'rose';
+  color?: 'indigo' | 'emerald' | 'amber' | 'rose' | 'cyan';
 }
 
 const colorMap = {
   indigo: {
-    bg: 'rgba(99, 102, 241, 0.1)',
-    border: 'rgba(99, 102, 241, 0.2)',
-    iconBg: 'rgba(99, 102, 241, 0.15)',
-    iconColor: '#818cf8',
-    glow: 'rgba(99, 102, 241, 0.3)',
+    bg: 'rgba(124, 58, 237, 0.04)',
+    border: 'rgba(124, 58, 237, 0.15)',
+    iconBg: 'rgba(124, 58, 237, 0.15)',
+    iconColor: '#a78bfa',
+    glow: 'rgba(124, 58, 237, 0.3)',
+    text: '#c4b5fd',
   },
   emerald: {
-    bg: 'rgba(16, 185, 129, 0.1)',
-    border: 'rgba(16, 185, 129, 0.2)',
+    bg: 'rgba(16, 185, 129, 0.04)',
+    border: 'rgba(16, 185, 129, 0.15)',
     iconBg: 'rgba(16, 185, 129, 0.15)',
     iconColor: '#34d399',
     glow: 'rgba(16, 185, 129, 0.3)',
+    text: '#6ee7b7',
   },
   amber: {
-    bg: 'rgba(245, 158, 11, 0.1)',
-    border: 'rgba(245, 158, 11, 0.2)',
+    bg: 'rgba(245, 158, 11, 0.04)',
+    border: 'rgba(245, 158, 11, 0.15)',
     iconBg: 'rgba(245, 158, 11, 0.15)',
     iconColor: '#fbbf24',
     glow: 'rgba(245, 158, 11, 0.3)',
+    text: '#fcd34d',
   },
   rose: {
-    bg: 'rgba(239, 68, 68, 0.1)',
-    border: 'rgba(239, 68, 68, 0.2)',
+    bg: 'rgba(239, 68, 68, 0.04)',
+    border: 'rgba(239, 68, 68, 0.15)',
     iconBg: 'rgba(239, 68, 68, 0.15)',
     iconColor: '#f87171',
     glow: 'rgba(239, 68, 68, 0.3)',
+    text: '#fca5a5',
+  },
+  cyan: {
+    bg: 'rgba(6, 182, 212, 0.04)',
+    border: 'rgba(6, 182, 212, 0.15)',
+    iconBg: 'rgba(6, 182, 212, 0.15)',
+    iconColor: '#22d3ee',
+    glow: 'rgba(6, 182, 212, 0.3)',
+    text: '#67e8f9',
   },
 };
 
@@ -50,33 +62,66 @@ export default function StatsCard({ title, value, icon: Icon, trend, trendUp, co
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4, scale: 1.02 }}
-      transition={{ duration: 0.3 }}
-      className="glass-card p-6 cursor-default"
+      whileHover={{ y: -6, scale: 1.02 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className="glass-card p-8 cursor-default relative overflow-hidden"
       style={{
         background: colors.bg,
         borderColor: colors.border,
       }}
     >
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+      {/* Top Accent Gradient */}
+      <div 
+        className="absolute top-0 left-0 right-0 h-[2px]" 
+        style={{ 
+          background: `linear-gradient(90deg, transparent, ${colors.glow}, transparent)`,
+          opacity: 0.5 
+        }} 
+      />
+
+      {/* Subtle Background Glow */}
+      <div 
+        className="absolute -top-10 -right-10 w-32 h-32 rounded-full blur-3xl"
+        style={{ background: colors.glow, opacity: 0.15 }}
+      />
+
+      <div className="flex flex-col h-full relative z-10">
+        <div className="flex items-start justify-between mb-4">
+          <p className="text-sm font-medium tracking-wide" style={{ color: 'var(--text-muted)' }}>
             {title}
           </p>
-          <p className="text-3xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+          <div
+            className="p-3 rounded-xl shadow-inner"
+            style={{ 
+              background: colors.iconBg,
+              border: `1px solid ${colors.border}` 
+            }}
+          >
+            <Icon className="w-5 h-5" style={{ color: colors.iconColor }} />
+          </div>
+        </div>
+
+        <div className="mt-auto">
+          <p className="stat-value" style={{ color: 'var(--text-primary)' }}>
             {value}
           </p>
+          
           {trend && (
-            <p className="text-xs mt-2 font-medium" style={{ color: trendUp ? '#34d399' : '#f87171' }}>
-              {trendUp ? '↑' : '↓'} {trend}
-            </p>
+            <div className="flex items-center gap-2 mt-3">
+              <span 
+                className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold"
+                style={{ 
+                  background: trendUp ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                  color: trendUp ? '#34d399' : '#f87171' 
+                }}
+              >
+                {trendUp ? '↑' : '↓'} {trend}
+              </span>
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                vs last month
+              </span>
+            </div>
           )}
-        </div>
-        <div
-          className="p-3 rounded-xl"
-          style={{ background: colors.iconBg }}
-        >
-          <Icon className="w-6 h-6" style={{ color: colors.iconColor }} />
         </div>
       </div>
     </motion.div>

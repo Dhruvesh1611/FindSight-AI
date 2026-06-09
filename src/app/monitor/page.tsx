@@ -1,16 +1,16 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Camera,
-  Shield,
   Users,
   Activity,
   AlertTriangle,
   Clock,
   Scan,
   Zap,
+  ShieldAlert,
 } from 'lucide-react';
 import Image from 'next/image';
 import CameraFeed from '@/components/camera/CameraFeed';
@@ -86,16 +86,21 @@ export default function MonitorPage() {
 
         // Create a dummy captured image (solid color placeholder)
         const canvas = document.createElement('canvas');
-        canvas.width = 640;
-        canvas.height = 480;
+        canvas.width = 1280;
+        canvas.height = 720;
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.fillStyle = `hsl(${Math.random() * 360}, 50%, 30%)`;
-          ctx.fillRect(0, 0, 640, 480);
+          ctx.fillRect(0, 0, 1280, 720);
           // Add some text
           ctx.fillStyle = '#ffffff';
-          ctx.font = '20px Arial';
-          ctx.fillText('Demo Frame - ' + new Date().toLocaleTimeString(), 20, 50);
+          ctx.font = '24px Inter, sans-serif';
+          ctx.fillText('Demo Surveillance Frame - ' + new Date().toLocaleTimeString(), 40, 60);
+          
+          // Draw a face box
+          ctx.strokeStyle = '#10b981';
+          ctx.lineWidth = 4;
+          ctx.strokeRect(500, 200, 280, 320);
         }
         const dummyImage = canvas.toDataURL('image/jpeg', 0.8);
 
@@ -121,11 +126,15 @@ export default function MonitorPage() {
         });
         setShowAlert(true);
 
-        toast.error('🚨 MATCH FOUND!', {
-          description: `${randomPerson.name} detected with ${formatConfidence(confidence)} confidence (Demo)`,
+        toast.error('CRITICAL MATCH', {
+          description: `${randomPerson.name} detected with ${formatConfidence(confidence)} confidence`,
           duration: 8000,
+          style: {
+            background: 'rgba(153, 27, 27, 0.9)',
+            border: '1px solid rgba(239, 68, 68, 0.5)',
+          }
         });
-      }, 5000 + Math.random() * 3000);
+      }, 6000 + Math.random() * 4000);
 
       setDemoInterval(interval);
     } else if (demoInterval && !isDemoMode) {
@@ -173,9 +182,13 @@ export default function MonitorPage() {
           });
           setShowAlert(true);
 
-          toast.error('🚨 MATCH FOUND!', {
+          toast.error('CRITICAL MATCH', {
             description: `${result.person_name || 'Person'} detected with ${formatConfidence(result.confidence)} confidence`,
             duration: 8000,
+            style: {
+              background: 'rgba(153, 27, 27, 0.9)',
+              border: '1px solid rgba(239, 68, 68, 0.5)',
+            }
           });
         }
       }
@@ -203,251 +216,313 @@ export default function MonitorPage() {
 
       const data = await response.json();
       if (data.success) {
-        toast.success('Detection saved successfully');
+        toast.success('Detection logged in database');
         setShowAlert(false);
       } else {
-        toast.error('Failed to save detection');
+        toast.error('Failed to log detection');
       }
     } catch {
-      toast.error('Error saving detection');
+      toast.error('Error logging detection');
     }
   };
 
   return (
-    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="section-spacing">
+      <div className="container-main">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
+          initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4"
+          className="flex flex-col sm:flex-row sm:items-end sm:justify-between mb-8 gap-6"
         >
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl" style={{ background: 'rgba(16, 185, 129, 0.15)' }}>
-              <Camera className="w-7 h-7" style={{ color: '#34d399' }} />
+          <div className="flex items-center gap-5">
+            <div className="p-4 rounded-2xl shadow-inner" style={{ 
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(52, 211, 153, 0.05))',
+              border: '1px solid rgba(16, 185, 129, 0.2)' 
+            }}>
+              <ShieldAlert className="w-8 h-8" style={{ color: '#34d399' }} />
             </div>
             <div>
-              <h1 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                Live Monitor
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-overline tracking-widest text-emerald-400">Command Center</span>
+                <span className={`w-2 h-2 rounded-full ${isMonitoring ? 'bg-emerald-500 live-dot' : 'bg-gray-500'}`}></span>
+              </div>
+              <h1 className="text-4xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+                Surveillance Terminal
               </h1>
-              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                Real-time face detection and matching from camera feed
-              </p>
             </div>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-4">
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
               onClick={() => setIsDemoMode(!isDemoMode)}
-              className="flex items-center gap-2 px-4 py-3 rounded-xl font-medium transition-all"
+              className="flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all"
               style={{
-                background: isDemoMode ? 'rgba(251, 191, 36, 0.2)' : 'rgba(107, 114, 128, 0.2)',
-                border: isDemoMode ? '1px solid rgba(251, 191, 36, 0.5)' : '1px solid rgba(107, 114, 128, 0.5)',
-                color: isDemoMode ? '#fcd34d' : '#d1d5db',
+                background: isDemoMode ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                border: isDemoMode ? '1px solid rgba(251, 191, 36, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
+                color: isDemoMode ? '#fcd34d' : 'var(--text-secondary)',
               }}
               title="Toggle demo mode for simulated detections"
             >
               <Zap className="w-4 h-4" />
-              <span className="text-sm">Demo Mode</span>
+              <span>SIMULATE</span>
             </motion.button>
 
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
               onClick={() => setIsMonitoring(!isMonitoring)}
-              className={`glow-btn flex items-center gap-2 ${isMonitoring ? 'glow-btn-danger' : 'glow-btn-success'}`}
+              className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold tracking-wide transition-all shadow-lg ${
+                isMonitoring 
+                  ? 'bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500/30 shadow-red-500/20' 
+                  : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 hover:bg-emerald-500/30 shadow-emerald-500/20'
+              }`}
             >
               {isMonitoring ? (
                 <>
-                  <Shield className="w-4 h-4" />
-                  Stop Monitoring
+                  <ShieldAlert className="w-5 h-5" />
+                  HALT SCAN
                 </>
               ) : (
                 <>
-                  <Scan className="w-4 h-4" />
-                  Start Monitoring
+                  <Scan className="w-5 h-5" />
+                  INITIATE SCAN
                 </>
               )}
             </motion.button>
           </div>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Camera Feed (2/3) */}
-          <div className="lg:col-span-2 space-y-6">
-            <CameraFeed
-              onFrameCapture={isDemoMode ? undefined : handleFrameCapture}
-              captureInterval={3000}
-              isMonitoring={isMonitoring}
-            />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Main Feed Area (8 columns) */}
+          <div className="lg:col-span-8 space-y-8">
+            <div className="glass-card p-2 rounded-[28px] card-accent-top">
+              <CameraFeed
+                onFrameCapture={isDemoMode ? undefined : handleFrameCapture}
+                captureInterval={2000} // Faster capture rate for more responsive feel
+                isMonitoring={isMonitoring}
+              />
+            </div>
 
-            {/* Demo Mode Indicator */}
-            {isDemoMode && isMonitoring && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="glass-card p-4 flex items-center gap-3"
-                style={{
-                  borderColor: 'rgba(251, 191, 36, 0.3)',
-                  background: 'rgba(251, 191, 36, 0.05)',
-                }}
-              >
+            {/* System Status Banner */}
+            <AnimatePresence mode="wait">
+              {isDemoMode && isMonitoring ? (
                 <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                  key="demo"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="p-5 rounded-2xl flex items-center gap-4 shadow-lg"
+                  style={{
+                    background: 'linear-gradient(90deg, rgba(251, 191, 36, 0.1), rgba(251, 191, 36, 0.02))',
+                    borderLeft: '4px solid #fbbf24',
+                    borderTop: '1px solid rgba(251, 191, 36, 0.2)',
+                    borderRight: '1px solid rgba(251, 191, 36, 0.1)',
+                    borderBottom: '1px solid rgba(251, 191, 36, 0.1)',
+                  }}
                 >
-                  <Zap className="w-5 h-5" style={{ color: '#fbbf24' }} />
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+                    className="p-2 bg-amber-500/20 rounded-lg"
+                  >
+                    <Zap className="w-6 h-6 text-amber-400" />
+                  </motion.div>
+                  <div>
+                    <h3 className="font-bold text-amber-400 uppercase tracking-widest text-sm mb-1">Simulation Mode Active</h3>
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      Generating synthetic frame data and injecting mock face encodings for demonstration.
+                    </p>
+                  </div>
                 </motion.div>
-                <p className="text-sm font-medium" style={{ color: '#fbbf24' }}>
-                  Demo Mode Active — Simulating detections for presentation
-                </p>
-              </motion.div>
-            )}
-
-            {/* Processing Indicator */}
-            {isProcessing && !isDemoMode && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="glass-card p-4 flex items-center gap-3"
-                style={{ borderColor: 'rgba(99, 102, 241, 0.3)' }}
-              >
+              ) : isProcessing && !isDemoMode ? (
                 <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                  key="processing"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="p-5 rounded-2xl flex items-center gap-4"
+                  style={{
+                    background: 'linear-gradient(90deg, rgba(124, 58, 237, 0.1), rgba(124, 58, 237, 0.02))',
+                    borderLeft: '4px solid #7c3aed',
+                    borderTop: '1px solid rgba(124, 58, 237, 0.2)',
+                    borderRight: '1px solid rgba(124, 58, 237, 0.1)',
+                    borderBottom: '1px solid rgba(124, 58, 237, 0.1)',
+                  }}
                 >
-                  <Scan className="w-5 h-5" style={{ color: '#818cf8' }} />
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                  >
+                    <Scan className="w-6 h-6" style={{ color: '#a78bfa' }} />
+                  </motion.div>
+                  <div>
+                    <h3 className="font-bold uppercase tracking-widest text-sm mb-1" style={{ color: '#c4b5fd' }}>Neural Analysis</h3>
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      Extracting facial embeddings from current frame and computing cosine similarity against active case database...
+                    </p>
+                  </div>
                 </motion.div>
-                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  Analyzing frame for face matches...
-                </p>
-              </motion.div>
-            )}
+              ) : null}
+            </AnimatePresence>
           </div>
 
-          {/* Sidebar (1/3) */}
-          <div className="space-y-6">
-            {/* Monitor Stats */}
+          {/* Intel Sidebar (4 columns) */}
+          <div className="lg:col-span-4 space-y-8">
+            {/* Telemetry Stats */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="glass-card p-6 space-y-4"
+              className="glass-card p-6 card-accent-top"
             >
-              <h3 className="text-lg font-semibold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-                <Activity className="w-5 h-5" style={{ color: '#818cf8' }} />
-                Monitor Stats
+              <h3 className="text-sm font-bold uppercase tracking-widest mb-6 flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                <Activity className="w-4 h-4" style={{ color: '#a78bfa' }} />
+                Session Telemetry
               </h3>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="glass-card p-3 text-center" style={{ background: 'rgba(255,255,255,0.02)' }}>
-                  <p className="text-2xl font-bold" style={{ color: '#818cf8' }}>{frameCount}</p>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Frames</p>
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="glass-card-subtle p-4 rounded-xl relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+                  <p className="text-xs uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Frames Analyzed</p>
+                  <p className="text-3xl font-bold font-mono" style={{ color: '#c4b5fd' }}>{String(frameCount).padStart(4, '0')}</p>
                 </div>
-                <div className="glass-card p-3 text-center" style={{ background: 'rgba(255,255,255,0.02)' }}>
-                  <p className="text-2xl font-bold" style={{ color: matchCount > 0 ? '#f87171' : '#34d399' }}>{matchCount}</p>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Matches</p>
+                <div className="glass-card-subtle p-4 rounded-xl relative overflow-hidden">
+                  <div className={`absolute top-0 left-0 w-1 h-full ${matchCount > 0 ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
+                  <p className="text-xs uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Matches</p>
+                  <p className="text-3xl font-bold font-mono" style={{ color: matchCount > 0 ? '#fca5a5' : '#6ee7b7' }}>
+                    {String(matchCount).padStart(2, '0')}
+                  </p>
                 </div>
               </div>
 
-              {/* Last Match */}
-              {lastMatch && (
-                <div className="glass-card p-4" style={{
-                  background: lastMatch.matched ? 'rgba(239, 68, 68, 0.05)' : 'rgba(255,255,255,0.02)',
-                  borderColor: lastMatch.matched ? 'rgba(239, 68, 68, 0.2)' : undefined,
-                }}>
-                  <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>
-                    Last Result
-                  </p>
-                  {lastMatch.matched ? (
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-red-400" />
-                      <span className="text-sm font-semibold text-red-400">Match Found</span>
-                      <span className={`ml-auto text-lg font-bold ${getConfidenceColor(lastMatch.confidence)}`}>
-                        {formatConfidence(lastMatch.confidence)}
-                      </span>
-                    </div>
-                  ) : (
-                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      {lastMatch.message || 'No match detected'}
-                    </p>
-                  )}
-                </div>
-              )}
+              {/* Last Match Status */}
+              <div className="mt-4 border-t border-white/5 pt-4">
+                <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>
+                  Latest Vector Result
+                </p>
+                
+                {lastMatch ? (
+                  <div className={`p-4 rounded-xl border ${lastMatch.matched ? 'bg-red-500/10 border-red-500/30' : 'glass-card-subtle'}`}>
+                    {lastMatch.matched ? (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <AlertTriangle className="w-5 h-5 text-red-400" />
+                          <div>
+                            <p className="text-sm font-bold text-red-400">POSITIVE HIT</p>
+                            <p className="text-xs text-red-400/70">{lastMatch.person_name}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className={`text-xl font-bold font-mono ${getConfidenceColor(lastMatch.confidence)}`}>
+                            {formatConfidence(lastMatch.confidence)}
+                          </p>
+                          <p className="text-[10px] uppercase text-red-400/50 tracking-wider">Confidence</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <Scan className="w-5 h-5 text-emerald-400/50" />
+                        <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                          {lastMatch.message || 'No vectors crossed threshold'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="glass-card-subtle p-4 rounded-xl flex items-center justify-center h-20">
+                    <p className="text-sm text-center" style={{ color: 'var(--text-muted)' }}>Awaiting first detection cycle</p>
+                  </div>
+                )}
+              </div>
             </motion.div>
 
-            {/* Active Cases */}
+            {/* Target Database */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
-              className="glass-card p-6"
+              className="glass-card flex flex-col overflow-hidden"
+              style={{ maxHeight: '400px' }}
             >
-              <h3 className="text-lg font-semibold flex items-center gap-2 mb-4" style={{ color: 'var(--text-primary)' }}>
-                <Users className="w-5 h-5" style={{ color: '#fbbf24' }} />
-                Active Cases ({activePersons.length})
-              </h3>
+              <div className="p-6 pb-4 border-b border-white/5">
+                <h3 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                  <Users className="w-4 h-4" style={{ color: '#fbbf24' }} />
+                  Target Database
+                  <span className="ml-auto px-2 py-0.5 rounded-full bg-white/10 text-xs text-white">
+                    {activePersons.length}
+                  </span>
+                </h3>
+              </div>
 
-              {activePersons.length > 0 ? (
-                <div className="space-y-3 max-h-80 overflow-y-auto">
-                  {activePersons.map((person) => (
-                    <div
-                      key={person._id}
-                      className="flex items-center gap-3 p-3 rounded-xl"
-                      style={{ background: 'rgba(255,255,255,0.02)' }}
-                    >
-                      <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0"
-                        style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
-                        <Image
-                          src={person.photoUrl}
-                          alt={person.name}
-                          fill
-                          className="object-cover"
-                        />
+              <div className="p-4 overflow-y-auto flex-1">
+                {activePersons.length > 0 ? (
+                  <div className="space-y-3">
+                    {activePersons.map((person) => (
+                      <div
+                        key={person._id}
+                        className="flex items-center gap-4 p-3 rounded-xl border border-transparent hover:border-white/10 transition-colors bg-white/5"
+                      >
+                        <div className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-white/10">
+                          <Image
+                            src={person.photoUrl}
+                            alt={person.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>
+                            {person.name}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-white/10" style={{ color: 'var(--text-muted)' }}>
+                              ID: {person._id.substring(person._id.length - 6).toUpperCase()}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] flex-shrink-0" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-                          {person.name}
-                        </p>
-                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                          {person.age}y • {person.gender}
-                        </p>
-                      </div>
-                      <div className="w-2 h-2 rounded-full bg-yellow-400 pulse-glow flex-shrink-0" />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Users className="w-10 h-10 mx-auto mb-2" style={{ color: 'var(--text-muted)' }} />
-                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                    No active cases registered
-                  </p>
-                </div>
-              )}
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-10">
+                    <Users className="w-12 h-12 mx-auto mb-3 opacity-20" style={{ color: 'var(--text-muted)' }} />
+                    <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                      Database empty
+                    </p>
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                      Register cases to begin matching
+                    </p>
+                  </div>
+                )}
+              </div>
             </motion.div>
 
-            {/* Last Captured Frame */}
+            {/* Frame Buffer */}
             {lastCapturedImage && (
               <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
                 className="glass-card p-4"
               >
-                <p className="text-xs font-medium mb-2 flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
-                  <Clock className="w-3 h-3" />
-                  Last Captured Frame
-                </p>
-                <div className="relative rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                    <Camera className="w-3.5 h-3.5" />
+                    Frame Buffer
+                  </p>
+                  <span className="text-[10px] font-mono text-indigo-400">MEM_0x{Math.floor(Math.random() * 10000).toString(16).toUpperCase()}</span>
+                </div>
+                <div className="relative rounded-xl overflow-hidden border border-white/10 aspect-video">
                   <Image
                     src={lastCapturedImage}
                     alt="Last captured"
-                    width={300}
-                    height={200}
-                    className="w-full object-cover"
+                    fill
+                    className="object-cover"
                   />
+                  {/* Digital overlay grid */}
+                  <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+CjxyZWN0IHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMSkiIHN0cm9rZS13aWR0aD0iMSIvPgo8L3N2Zz4=')] opacity-30 pointer-events-none"></div>
                 </div>
               </motion.div>
             )}

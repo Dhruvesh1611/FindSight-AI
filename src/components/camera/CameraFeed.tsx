@@ -2,7 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Camera, CameraOff, Circle, Wifi, WifiOff } from 'lucide-react';
+import { Camera, CameraOff, Circle, Wifi, WifiOff, ScanFace, Maximize } from 'lucide-react';
 
 interface CameraFeedProps {
   onFrameCapture: (imageData: string) => void;
@@ -25,8 +25,8 @@ export default function CameraFeed({ onFrameCapture, captureInterval = 3000, isM
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode,
-          width: { ideal: 640 },
-          height: { ideal: 480 },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
         },
         audio: false,
       });
@@ -112,18 +112,18 @@ export default function CameraFeed({ onFrameCapture, captureInterval = 3000, isM
   }, [facingMode]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Camera Feed */}
-      <div className="camera-container relative" style={{
-        background: 'var(--bg-card)',
-        minHeight: '360px',
-      }}>
+      <div 
+        className={`camera-container relative bg-black ${isMonitoring ? 'monitoring' : ''}`} 
+        style={{ minHeight: '480px' }}
+      >
         <video
           ref={videoRef}
           autoPlay
           playsInline
           muted
-          className="w-full rounded-2xl"
+          className="w-full h-full object-cover absolute inset-0"
           style={{
             display: isStreaming ? 'block' : 'none',
             transform: facingMode === 'user' ? 'scaleX(-1)' : 'none',
@@ -133,71 +133,107 @@ export default function CameraFeed({ onFrameCapture, captureInterval = 3000, isM
         {/* Scan overlay */}
         {isStreaming && isMonitoring && (
           <>
-            <div className="scan-line" />
-            <div className="absolute inset-0 pointer-events-none rounded-2xl"
+            <div className="scan-line shadow-[0_0_20px_rgba(124,58,237,0.5)]" />
+            <div className="absolute inset-0 pointer-events-none"
               style={{
-                border: '2px solid rgba(99, 102, 241, 0.3)',
-                boxShadow: 'inset 0 0 30px rgba(99, 102, 241, 0.1)',
+                boxShadow: 'inset 0 0 100px rgba(124, 58, 237, 0.15)',
               }}
             />
             {/* Corner brackets */}
-            <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-indigo-400/50 rounded-tl-lg" />
-            <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-indigo-400/50 rounded-tr-lg" />
-            <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-indigo-400/50 rounded-bl-lg" />
-            <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-indigo-400/50 rounded-br-lg" />
+            <div className="absolute top-8 left-8 w-12 h-12 border-t-4 border-l-4 border-accent-primary rounded-tl-xl opacity-70" />
+            <div className="absolute top-8 right-8 w-12 h-12 border-t-4 border-r-4 border-accent-primary rounded-tr-xl opacity-70" />
+            <div className="absolute bottom-8 left-8 w-12 h-12 border-b-4 border-l-4 border-accent-primary rounded-bl-xl opacity-70" />
+            <div className="absolute bottom-8 right-8 w-12 h-12 border-b-4 border-r-4 border-accent-primary rounded-br-xl opacity-70" />
+            
+            {/* Center target UI */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] pointer-events-none opacity-20">
+              <div className="w-full h-full border border-dashed border-white rounded-full animate-spin-slow" style={{ animationDuration: '20s' }}></div>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] border border-white/30 rounded-full"></div>
+            </div>
           </>
         )}
 
         {/* Status badge */}
         {isStreaming && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
+          <div className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold tracking-wider"
             style={{
-              background: isMonitoring ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
-              color: isMonitoring ? '#34d399' : '#fbbf24',
-              border: `1px solid ${isMonitoring ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
-              backdropFilter: 'blur(8px)',
+              background: isMonitoring ? 'rgba(124, 58, 237, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+              color: isMonitoring ? '#c4b5fd' : '#6ee7b7',
+              border: `1px solid ${isMonitoring ? 'rgba(124, 58, 237, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`,
+              backdropFilter: 'blur(12px)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
             }}>
             <motion.div
               animate={{ opacity: [1, 0.3, 1] }}
               transition={{ duration: 1.5, repeat: Infinity }}
             >
-              <Circle className="w-2 h-2 fill-current" />
+              <Circle className="w-2.5 h-2.5 fill-current drop-shadow-[0_0_8px_currentColor]" />
             </motion.div>
-            {isMonitoring ? 'SCANNING' : 'LIVE'}
+            {isMonitoring ? 'AI SCANNING ACTIVE' : 'LIVE FEED'}
+          </div>
+        )}
+
+        {/* Action icons */}
+        {isStreaming && (
+          <div className="absolute top-6 right-6 flex items-center gap-3">
+            <button
+              onClick={captureFrame}
+              className="p-2.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white/80 hover:text-white hover:bg-black/60 transition-all"
+              title="Manual Capture"
+            >
+              <ScanFace className="w-5 h-5" />
+            </button>
+            <button
+              onClick={toggleCamera}
+              className="p-2.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white/80 hover:text-white hover:bg-black/60 transition-all"
+              title="Switch Camera"
+            >
+              <Maximize className="w-5 h-5" />
+            </button>
           </div>
         )}
 
         {/* Placeholder when camera is off */}
         {!isStreaming && !error && (
-          <div className="flex flex-col items-center justify-center h-[360px] text-center space-y-4">
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center bg-black/40 backdrop-blur-sm">
             <motion.div
-              animate={{ scale: [1, 1.05, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="p-6 rounded-2xl"
-              style={{ background: 'rgba(99, 102, 241, 0.1)' }}
+              animate={{ scale: [1, 1.05, 1], opacity: [0.8, 1, 0.8] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              className="relative w-24 h-24 mb-6 flex items-center justify-center"
             >
-              <Camera className="w-12 h-12" style={{ color: '#818cf8' }} />
+              <div className="absolute inset-0 rounded-full border border-white/10 animate-ping" style={{ animationDuration: '3s' }}></div>
+              <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center border border-white/10 backdrop-blur-md">
+                <Camera className="w-8 h-8 text-white/50" />
+              </div>
             </motion.div>
             <div>
-              <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-                Camera Feed Offline
+              <p className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+                System Offline
               </p>
-              <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-                Click &quot;Start Camera&quot; to begin monitoring
+              <p className="text-sm max-w-xs mx-auto" style={{ color: 'var(--text-muted)' }}>
+                Initialize camera connection to begin surveillance feed
               </p>
             </div>
+            
+            <button 
+              onClick={startCamera} 
+              className="mt-8 glow-btn flex items-center gap-2"
+            >
+              <Wifi className="w-4 h-4" />
+              Initialize Connection
+            </button>
           </div>
         )}
 
         {/* Error state */}
         {error && (
-          <div className="flex flex-col items-center justify-center h-[360px] text-center space-y-4 px-6">
-            <div className="p-6 rounded-2xl" style={{ background: 'rgba(239, 68, 68, 0.1)' }}>
-              <CameraOff className="w-12 h-12 text-red-400" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center bg-red-950/20 backdrop-blur-md">
+            <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/20 mb-6">
+              <CameraOff className="w-8 h-8 text-red-400" />
             </div>
             <div>
-              <p className="text-lg font-semibold text-red-400">Camera Error</p>
-              <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{error}</p>
+              <p className="text-xl font-bold text-red-400 mb-2">Connection Failed</p>
+              <p className="text-sm max-w-xs mx-auto" style={{ color: 'var(--text-secondary)' }}>{error}</p>
             </div>
           </div>
         )}
@@ -207,40 +243,17 @@ export default function CameraFeed({ onFrameCapture, captureInterval = 3000, isM
       <canvas ref={canvasRef} className="hidden" />
 
       {/* Controls */}
-      <div className="flex items-center gap-3">
-        {!isStreaming ? (
-          <button onClick={startCamera} className="glow-btn flex items-center gap-2 flex-1 justify-center">
-            <Wifi className="w-4 h-4" />
-            Start Camera
-          </button>
-        ) : (
-          <button onClick={stopCamera} className="glow-btn glow-btn-danger flex items-center gap-2 flex-1 justify-center">
+      {isStreaming && (
+        <div className="flex justify-center">
+          <button 
+            onClick={stopCamera} 
+            className="btn-ghost flex items-center gap-2 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30"
+          >
             <WifiOff className="w-4 h-4" />
-            Stop Camera
+            Disconnect Feed
           </button>
-        )}
-
-        {isStreaming && (
-          <>
-            <button
-              onClick={toggleCamera}
-              className="glow-btn px-4"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
-              title="Switch Camera"
-            >
-              🔄
-            </button>
-            <button
-              onClick={captureFrame}
-              className="glow-btn px-4"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
-              title="Capture Frame"
-            >
-              📸
-            </button>
-          </>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

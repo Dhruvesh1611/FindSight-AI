@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { Upload, User, MapPin, Calendar, Loader2, CheckCircle, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Upload, User, MapPin, Calendar, Loader2, CheckCircle, X, Info } from 'lucide-react';
 import Image from 'next/image';
 import { toast } from 'sonner';
 import { imageToBase64 } from '@/lib/utils';
@@ -21,6 +21,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,7 +99,10 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
       const data = await response.json();
 
       if (data.success) {
-        toast.success('Missing person registered successfully!');
+        toast.success('Case Registered Successfully', {
+          description: `${formData.name} is now active in the monitoring system.`,
+          icon: <CheckCircle className="text-emerald-500" />,
+        });
         setFormData({ name: '', age: '', gender: 'male', lastSeenLocation: '' });
         removePhoto();
         onSuccess?.();
@@ -117,162 +121,204 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
     <motion.form
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       onSubmit={handleSubmit}
-      className="glass-card p-8 space-y-6"
+      className="glass-card p-10 sm:p-12 relative overflow-hidden"
     >
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-3 rounded-xl" style={{ background: 'rgba(99, 102, 241, 0.15)' }}>
-          <User className="w-6 h-6" style={{ color: '#818cf8' }} />
+      {/* Top Accent */}
+      <div 
+        className="absolute top-0 left-0 right-0 h-[2px]" 
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(124, 58, 237, 0.5), transparent)' }} 
+      />
+
+      <div className="flex items-center gap-4 mb-10">
+        <div className="p-3.5 rounded-xl border border-indigo-500/20 shadow-inner" style={{ background: 'rgba(124, 58, 237, 0.1)' }}>
+          <User className="w-6 h-6" style={{ color: '#a78bfa' }} />
         </div>
         <div>
-          <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-            Person Information
+          <h2 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+            Subject Profile
           </h2>
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            Enter details about the missing person
+          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+            Enter details to generate AI facial embeddings
           </p>
         </div>
       </div>
 
-      {/* Photo Upload */}
-      <div>
-        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
-          Photo <span className="text-red-400">*</span>
-        </label>
-        <div className="flex items-start gap-4">
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            className="relative w-32 h-32 rounded-2xl border-2 border-dashed flex items-center justify-center cursor-pointer overflow-hidden transition-all hover:border-indigo-400/50"
-            style={{
-              borderColor: photoPreview ? 'rgba(99, 102, 241, 0.3)' : 'rgba(255, 255, 255, 0.1)',
-              background: 'rgba(255, 255, 255, 0.02)',
-            }}
-          >
-            {photoPreview ? (
-              <>
-                <Image src={photoPreview} alt="Preview" fill className="object-cover" />
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); removePhoto(); }}
-                  className="absolute top-1 right-1 p-1 rounded-full bg-red-500/80 text-white hover:bg-red-500"
+      <div className="space-y-8">
+        {/* Photo Upload */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <label className="text-sm font-semibold tracking-wide" style={{ color: 'var(--text-secondary)' }}>
+              Primary Photograph <span className="text-red-400">*</span>
+            </label>
+            <span className="text-[10px] uppercase font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">Required for AI</span>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row items-start gap-6">
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="relative w-40 h-40 rounded-2xl flex items-center justify-center cursor-pointer overflow-hidden transition-all duration-300 group flex-shrink-0"
+              style={{
+                background: 'rgba(255, 255, 255, 0.02)',
+                border: photoPreview ? '1px solid rgba(124, 58, 237, 0.3)' : '1px dashed rgba(255, 255, 255, 0.15)',
+              }}
+            >
+              {/* Hover glow */}
+              <div className="absolute inset-0 bg-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              
+              {photoPreview ? (
+                <>
+                  <Image src={photoPreview} alt="Preview" fill className="object-cover" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <p className="text-white text-xs font-semibold">Change Photo</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); removePhoto(); }}
+                    className="absolute top-2 right-2 p-1.5 rounded-full bg-red-500 text-white hover:bg-red-600 shadow-lg transform transition-transform hover:scale-110"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              ) : (
+                <div className="text-center group-hover:transform group-hover:-translate-y-1 transition-transform">
+                  <Upload className="w-8 h-8 mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
+                  <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Click to upload</p>
+                </div>
+              )}
+            </div>
+            
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoChange}
+              className="hidden"
+            />
+            
+            <div className="glass-card-subtle p-5 rounded-xl flex-1 w-full border-l-4 border-l-indigo-500/50">
+              <h4 className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                <Info className="w-4 h-4 text-indigo-400" />
+                Image Requirements
+              </h4>
+              <ul className="text-sm space-y-2" style={{ color: 'var(--text-muted)' }}>
+                <li className="flex items-center gap-2"><span className="w-1 h-1 rounded-full bg-indigo-400"></span> Clear, front-facing profile</li>
+                <li className="flex items-center gap-2"><span className="w-1 h-1 rounded-full bg-indigo-400"></span> Good lighting, no heavy shadows</li>
+                <li className="flex items-center gap-2"><span className="w-1 h-1 rounded-full bg-indigo-400"></span> No sunglasses or large face coverings</li>
+                <li className="flex items-center gap-2"><span className="w-1 h-1 rounded-full bg-indigo-400"></span> Max size: 5MB (JPG, PNG)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Form Fields */}
+        <div className="grid gap-6 pt-2">
+          {/* Name */}
+          <div className="space-y-2">
+            <label className="text-sm font-semibold tracking-wide" style={{ color: 'var(--text-secondary)' }}>
+              Full Name <span className="text-red-400">*</span>
+            </label>
+            <div className={`relative transition-all duration-300 ${focusedField === 'name' ? 'transform translate-x-1' : ''}`}>
+              <User className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${focusedField === 'name' ? 'text-indigo-400' : 'text-slate-500'}`} />
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onFocus={() => setFocusedField('name')}
+                onBlur={() => setFocusedField(null)}
+                placeholder="Enter subject's full name"
+                className="glass-input pl-12"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Age & Gender */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold tracking-wide" style={{ color: 'var(--text-secondary)' }}>
+                Age <span className="text-red-400">*</span>
+              </label>
+              <div className={`relative transition-all duration-300 ${focusedField === 'age' ? 'transform translate-x-1' : ''}`}>
+                <Calendar className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${focusedField === 'age' ? 'text-indigo-400' : 'text-slate-500'}`} />
+                <input
+                  type="number"
+                  value={formData.age}
+                  onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                  onFocus={() => setFocusedField('age')}
+                  onBlur={() => setFocusedField(null)}
+                  placeholder="Subject age"
+                  min="0"
+                  max="150"
+                  className="glass-input pl-12"
+                  required
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold tracking-wide" style={{ color: 'var(--text-secondary)' }}>
+                Gender <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  value={formData.gender}
+                  onChange={(e) => setFormData({ ...formData, gender: e.target.value as 'male' | 'female' | 'other' })}
+                  onFocus={() => setFocusedField('gender')}
+                  onBlur={() => setFocusedField(null)}
+                  className={`glass-select transition-all duration-300 ${focusedField === 'gender' ? 'transform translate-x-1 border-indigo-400' : ''}`}
+                  required
                 >
-                  <X className="w-3 h-3" />
-                </button>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Last Seen Location */}
+          <div className="space-y-2">
+            <label className="text-sm font-semibold tracking-wide" style={{ color: 'var(--text-secondary)' }}>
+              Last Known Location <span className="text-red-400">*</span>
+            </label>
+            <div className={`relative transition-all duration-300 ${focusedField === 'location' ? 'transform translate-x-1' : ''}`}>
+              <MapPin className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${focusedField === 'location' ? 'text-indigo-400' : 'text-slate-500'}`} />
+              <input
+                type="text"
+                value={formData.lastSeenLocation}
+                onChange={(e) => setFormData({ ...formData, lastSeenLocation: e.target.value })}
+                onFocus={() => setFocusedField('location')}
+                onBlur={() => setFocusedField(null)}
+                placeholder="e.g., Central Station, Platform 4"
+                className="glass-input pl-12"
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Submit */}
+        <div className="pt-6 border-t border-white/5">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="glow-btn btn-shimmer w-full flex items-center justify-center gap-3 py-4 text-base tracking-wide disabled:opacity-50 disabled:cursor-not-allowed disabled:before:hidden"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Processing Profile & Generating Embeddings...
               </>
             ) : (
-              <div className="text-center">
-                <Upload className="w-8 h-8 mx-auto mb-2" style={{ color: 'var(--text-muted)' }} />
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Upload</p>
-              </div>
+              <>
+                <CheckCircle className="w-5 h-5" />
+                Initialize Search Case
+              </>
             )}
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handlePhotoChange}
-            className="hidden"
-          />
-          <div className="text-sm space-y-1" style={{ color: 'var(--text-muted)' }}>
-            <p>Upload a clear, front-facing photo</p>
-            <p>Supported: JPG, PNG, WebP</p>
-            <p>Max size: 5MB</p>
-          </div>
+          </button>
         </div>
       </div>
-
-      {/* Name */}
-      <div>
-        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
-          Full Name <span className="text-red-400">*</span>
-        </label>
-        <div className="relative">
-          <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
-          <input
-            type="text"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="Enter full name"
-            className="glass-input pl-11"
-            required
-          />
-        </div>
-      </div>
-
-      {/* Age & Gender */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
-            Age <span className="text-red-400">*</span>
-          </label>
-          <div className="relative">
-            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
-            <input
-              type="number"
-              value={formData.age}
-              onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-              placeholder="Age"
-              min="0"
-              max="150"
-              className="glass-input pl-11"
-              required
-            />
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
-            Gender <span className="text-red-400">*</span>
-          </label>
-          <select
-            value={formData.gender}
-            onChange={(e) => setFormData({ ...formData, gender: e.target.value as 'male' | 'female' | 'other' })}
-            className="glass-select"
-            required
-          >
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Last Seen Location */}
-      <div>
-        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
-          Last Seen Location <span className="text-red-400">*</span>
-        </label>
-        <div className="relative">
-          <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
-          <input
-            type="text"
-            value={formData.lastSeenLocation}
-            onChange={(e) => setFormData({ ...formData, lastSeenLocation: e.target.value })}
-            placeholder="e.g., Mumbai Central Railway Station"
-            className="glass-input pl-11"
-            required
-          />
-        </div>
-      </div>
-
-      {/* Submit */}
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="glow-btn w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isSubmitting ? (
-          <>
-            <Loader2 className="w-5 h-5 animate-spin" />
-            Registering...
-          </>
-        ) : (
-          <>
-            <CheckCircle className="w-5 h-5" />
-            Register Missing Person
-          </>
-        )}
-      </button>
     </motion.form>
   );
 }

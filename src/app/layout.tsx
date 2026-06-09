@@ -36,18 +36,22 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${inter.variable} font-sans antialiased`}>
+        {/* Noise texture overlay for premium depth */}
+        <div className="noise-overlay" />
         <Navbar />
-        <main className="pt-16 min-h-screen">
+        <main className="pt-20 min-h-screen">
           {children}
         </main>
         <Toaster
           position="top-right"
           toastOptions={{
             style: {
-              background: 'rgba(26, 26, 46, 0.95)',
+              background: 'rgba(17, 17, 25, 0.95)',
               border: '1px solid rgba(255, 255, 255, 0.08)',
-              color: '#f1f5f9',
-              backdropFilter: 'blur(16px)',
+              color: '#f0f0f5',
+              backdropFilter: 'blur(20px)',
+              borderRadius: '16px',
+              fontSize: '0.9rem',
             },
           }}
           richColors
