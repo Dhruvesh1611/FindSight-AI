@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Upload, User, MapPin, Calendar, Loader2, CheckCircle, X, Info } from 'lucide-react';
 import Image from 'next/image';
 import { toast } from 'sonner';

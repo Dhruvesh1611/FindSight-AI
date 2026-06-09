@@ -1,73 +1,83 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import Link from 'next/link';
 import {
-  Search,
-  Camera,
-  Shield,
-  Brain,
-  Bell,
-  BarChart3,
-  ArrowRight,
-  Scan,
-  Upload,
-  Eye,
-  Zap,
-  ChevronRight,
-  Users,
   Activity,
+  ArrowRight,
+  BarChart3,
+  Bell,
+  Brain,
+  Camera,
+  ChevronRight,
+  Eye,
   Radio,
+  Scan,
+  Search,
+  Shield,
+  Sparkles,
+  Upload,
+  Users,
+  Zap,
 } from 'lucide-react';
 
 const features = [
   {
     icon: Upload,
-    title: 'Register Missing Persons',
-    description: 'Upload photos and details of missing individuals. The system generates facial embeddings for real-time matching.',
-    color: '#a78bfa',
-    bg: 'rgba(124, 58, 237, 0.08)',
-    borderAccent: 'rgba(124, 58, 237, 0.15)',
+    title: 'Case Registration',
+    description: 'Create missing person profiles with photo evidence and structured details ready for AI-assisted monitoring.',
+    tone: 'text-violet-200',
   },
   {
     icon: Camera,
-    title: 'Live CCTV Monitoring',
-    description: 'Connect any camera as a surveillance feed. Continuous face detection analyzes every frame in real time.',
-    color: '#34d399',
-    bg: 'rgba(16, 185, 129, 0.08)',
-    borderAccent: 'rgba(16, 185, 129, 0.15)',
+    title: 'Live Feed Monitoring',
+    description: 'Analyze camera streams continuously and surface match events without interrupting the operator workflow.',
+    tone: 'text-emerald-300',
   },
   {
     icon: Brain,
-    title: 'AI Face Recognition',
-    description: 'Advanced face encoding and matching algorithms compare detected faces against registered profiles instantly.',
-    color: '#fbbf24',
-    bg: 'rgba(245, 158, 11, 0.08)',
-    borderAccent: 'rgba(245, 158, 11, 0.15)',
+    title: 'Face Intelligence',
+    description: 'Compare detected faces against registered profiles using generated embeddings and confidence scoring.',
+    tone: 'text-cyan-200',
   },
   {
     icon: Bell,
-    title: 'Instant Alerts',
-    description: 'When a match is found above the confidence threshold, the system generates immediate alerts with snapshots.',
-    color: '#f87171',
-    bg: 'rgba(239, 68, 68, 0.08)',
-    borderAccent: 'rgba(239, 68, 68, 0.15)',
+    title: 'Critical Alerts',
+    description: 'Escalate high-confidence detections with captured frame context, confidence, and case identity.',
+    tone: 'text-rose-300',
   },
   {
     icon: BarChart3,
-    title: 'Analytics Dashboard',
-    description: 'Track all registered cases, monitor detection statistics, and review recent alerts from a central dashboard.',
-    color: '#c4b5fd',
-    bg: 'rgba(167, 139, 250, 0.08)',
-    borderAccent: 'rgba(167, 139, 250, 0.15)',
+    title: 'Operational Analytics',
+    description: 'Track active searches, detection activity, and recent signals from a single command dashboard.',
+    tone: 'text-amber-200',
   },
   {
     icon: Shield,
-    title: 'Detection Logs',
-    description: 'Every detection is recorded with timestamps, confidence scores, and captured images for investigation review.',
-    color: '#2dd4bf',
-    bg: 'rgba(45, 212, 191, 0.08)',
-    borderAccent: 'rgba(45, 212, 191, 0.15)',
+    title: 'Audit Trail',
+    description: 'Maintain timestamped detection logs for investigation review and follow-up validation.',
+    tone: 'text-teal-200',
+  },
+];
+
+const stats = [
+  {
+    icon: Users,
+    value: 'Case-ready',
+    label: 'Cases Registered',
+    description: 'Profiles become searchable as soon as photo and details are submitted.',
+  },
+  {
+    icon: Radio,
+    value: '24/7',
+    label: 'Active Monitoring',
+    description: 'Designed for continuous review across surveillance sources.',
+  },
+  {
+    icon: Activity,
+    value: '< 3s',
+    label: 'Detections',
+    description: 'Fast frame analysis keeps operators close to live events.',
   },
 ];
 
@@ -75,179 +85,201 @@ const steps = [
   {
     icon: Upload,
     step: '01',
-    title: 'Upload Photo',
-    description: 'Register a missing person with their photo and details',
+    title: 'Register',
+    description: 'Add a missing person profile with photo, age, gender, and last known location.',
   },
   {
     icon: Scan,
     step: '02',
-    title: 'AI Processes',
-    description: 'System generates facial embeddings from the uploaded image',
+    title: 'Encode',
+    description: 'The system prepares facial embeddings for high-speed similarity matching.',
   },
   {
     icon: Eye,
     step: '03',
-    title: 'Monitor Feed',
-    description: 'Camera feed analyzes every frame for face detection',
+    title: 'Monitor',
+    description: 'Camera frames are sampled and analyzed against active search profiles.',
   },
   {
     icon: Zap,
     step: '04',
-    title: 'Match & Alert',
-    description: 'Instant alert when a face match exceeds confidence threshold',
+    title: 'Alert',
+    description: 'High-confidence matches trigger an operator alert and can be logged for review.',
   },
 ];
 
-const stats = [
-  { icon: Users, value: '24/7', label: 'Active Monitoring', color: '#a78bfa', bg: 'rgba(124, 58, 237, 0.08)' },
-  { icon: Activity, value: '< 3s', label: 'Detection Speed', color: '#34d399', bg: 'rgba(16, 185, 129, 0.08)' },
-  { icon: Radio, value: '95%+', label: 'Recognition Accuracy', color: '#fbbf24', bg: 'rgba(245, 158, 11, 0.08)' },
-];
-
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.12, delayChildren: 0.1 },
+    transition: { staggerChildren: 0.1, delayChildren: 0.08 },
   },
 };
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 30 },
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 24 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
+    transition: { duration: 0.55, ease: 'easeOut' },
   },
 };
+
+function HeroScene() {
+  return (
+    <div className="hero-scene" aria-hidden="true">
+      <div className="hero-sweep" />
+      <div className="hero-ui-grid">
+        <div className="hero-camera-preview">
+          <div className="absolute left-5 top-5 flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-bold text-emerald-200">
+            <span className="live-dot text-emerald-300" />
+            LIVE AI SCAN
+          </div>
+          <div className="absolute bottom-5 left-5 right-5 grid grid-cols-3 gap-3">
+            {['0.94', '18', '02'].map((value, index) => (
+              <div key={value} className="hero-mini-panel min-h-0 bg-black/30 p-3">
+                <div className="text-2xl font-bold text-white">{value}</div>
+                <div className="mt-1 text-xs text-slate-400">
+                  {index === 0 ? 'confidence' : index === 1 ? 'frames' : 'matches'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="hero-side-panel">
+          <div className="hero-mini-panel">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="h-2 w-24 rounded-full bg-violet-300/50" />
+              <div className="h-2 w-12 rounded-full bg-white/[0.15]" />
+            </div>
+            <div className="space-y-3">
+              <div className="h-3 rounded-full bg-white/[0.12]" />
+              <div className="h-3 w-4/5 rounded-full bg-white/10" />
+              <div className="h-3 w-2/3 rounded-full bg-white/10" />
+            </div>
+          </div>
+          <div className="hero-mini-panel">
+            <div className="mb-5 h-2 w-28 rounded-full bg-cyan-300/40" />
+            <div className="grid grid-cols-4 gap-2">
+              {Array.from({ length: 12 }).map((_, index) => (
+                <div
+                  key={index}
+                  className={`h-8 rounded-sm ${index === 6 ? 'bg-emerald-300/50' : 'bg-white/10'}`}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="hero-mini-panel">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-md border border-violet-300/20 bg-violet-300/15" />
+              <div className="flex-1 space-y-3">
+                <div className="h-3 rounded-full bg-white/[0.16]" />
+                <div className="h-3 w-3/4 rounded-full bg-white/10" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function HomePage() {
   return (
     <div className="relative overflow-hidden">
-      {/* ========== GLOBAL BACKGROUND ========== */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div
-          className="absolute top-[-20%] left-[10%] w-[600px] h-[600px] rounded-full hero-glow"
-          style={{ background: 'radial-gradient(circle, rgba(124, 58, 237, 0.15), transparent 70%)' }}
-        />
-        <div
-          className="absolute bottom-[10%] right-[5%] w-[500px] h-[500px] rounded-full hero-glow-slow"
-          style={{ background: 'radial-gradient(circle, rgba(167, 139, 250, 0.1), transparent 70%)' }}
-        />
-        <div
-          className="absolute top-[40%] left-[60%] w-[400px] h-[400px] rounded-full hero-glow-slow"
-          style={{ background: 'radial-gradient(circle, rgba(16, 185, 129, 0.06), transparent 70%)', animationDelay: '4s' }}
-        />
-      </div>
-
-      {/* ========== HERO SECTION ========== */}
-      <section className="relative min-h-screen flex items-center justify-center">
-        <div className="container-main w-full text-center">
+      <section className="hero-section">
+        <HeroScene />
+        <div className="container-main">
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+            className="hero-content"
           >
-            {/* Badge */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-              className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full mb-10 text-sm font-medium border-gradient"
-              style={{
-                background: 'rgba(124, 58, 237, 0.08)',
-                color: '#c4b5fd',
-              }}
-            >
-              <Brain className="w-4 h-4" />
-              AI-Powered Surveillance Intelligence
-              <ChevronRight className="w-3.5 h-3.5 opacity-60" />
-            </motion.div>
+            <div className="hero-badge">
+              <Sparkles className="h-4 w-4" />
+              AI surveillance intelligence for urgent search operations
+              <ChevronRight className="h-4 w-4 text-violet-200/70" />
+            </div>
 
-            {/* Title */}
-            <h1 className="text-hero mb-8">
-              <span style={{ color: 'var(--text-primary)' }}>Find Missing Persons</span>
-              <br />
-              <span className="gradient-text">With AI Vision</span>
+            <h1 className="text-hero text-white">
+              FindSight AI
+              <span className="mt-2 block gradient-text">Find missing persons with live vision intelligence.</span>
             </h1>
 
-            {/* Subtitle */}
-            <p className="text-lg sm:text-xl max-w-2xl mx-auto mb-12 leading-relaxed"
-              style={{ color: 'var(--text-secondary)' }}>
-              Leverage real-time face recognition and computer vision to identify missing individuals
-              from surveillance feeds — faster, smarter, and more accurate than ever.
+            <p className="mx-auto mt-7 max-w-3xl text-body text-lg text-slate-300">
+              Register cases, monitor camera feeds, and surface high-confidence matches in a polished command center built for fast response.
             </p>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
+            <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link href="/register">
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.97 }}
-                  className="glow-btn btn-shimmer text-base px-10 py-4 flex items-center gap-3 font-semibold"
+                <motion.span
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="glow-btn btn-shimmer px-8 py-4 text-base"
                 >
-                  <Search className="w-5 h-5" />
+                  <Search className="h-5 w-5" />
                   Register Missing Person
-                  <ArrowRight className="w-4 h-4" />
-                </motion.button>
+                  <ArrowRight className="h-4 w-4" />
+                </motion.span>
               </Link>
               <Link href="/monitor">
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.97 }}
-                  className="btn-ghost text-base px-10 py-4 flex items-center gap-3 font-semibold"
+                <motion.span
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="btn-ghost px-8 py-4 text-base"
                 >
-                  <Camera className="w-5 h-5" />
+                  <Camera className="h-5 w-5" />
                   Start Monitoring
-                </motion.button>
+                </motion.span>
               </Link>
             </div>
-
-            {/* Stats Row */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7, duration: 0.8 }}
-              className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto"
-            >
-              {stats.map((stat) => (
-                <div
-                  key={stat.label}
-                  className="glass-card-static flex items-center gap-4 px-6 py-5"
-                >
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: stat.bg }}
-                  >
-                    <stat.icon className="w-6 h-6" style={{ color: stat.color }} />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-2xl font-bold tracking-tight" style={{ color: stat.color }}>{stat.value}</p>
-                    <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{stat.label}</p>
-                  </div>
-                </div>
-              ))}
-            </motion.div>
           </motion.div>
         </div>
       </section>
 
-      {/* ========== FEATURES SECTION ========== */}
-      <section className="relative section-spacing">
+      <section className="stats-band section-spacing">
         <div className="container-main">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-100px' }}
-            transition={{ duration: 0.7 }}
-            className="text-center mb-20"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-80px' }}
+            className="grid grid-cols-1 gap-6 md:grid-cols-3"
           >
-            <span className="text-overline mb-4 block">Capabilities</span>
-            <h2 className="text-section-title mb-5" style={{ color: 'var(--text-primary)' }}>
-              Powerful <span className="gradient-text">Features</span>
+            {stats.map((stat) => (
+              <motion.div key={stat.label} variants={itemVariants} className="glass-card stat-tile">
+                <div className="mb-8 flex items-center justify-between">
+                  <div className="feature-icon mb-0">
+                    <stat.icon className="h-6 w-6 text-violet-200" />
+                  </div>
+                  <span className="status-badge border-violet-300/25 text-violet-200">Operational</span>
+                </div>
+                <div className="stat-value text-white">{stat.value}</div>
+                <h2 className="mt-3 text-card-title text-white">{stat.label}</h2>
+                <p className="mt-3 text-sm leading-6 text-slate-400">{stat.description}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      <section className="section-spacing">
+        <div className="container-main">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-80px' }}
+            transition={{ duration: 0.55, ease: 'easeOut' }}
+            className="section-header"
+          >
+            <span className="eyebrow">Capabilities</span>
+            <h2 className="mt-4 text-section-title text-white">
+              A real command layer for <span className="gradient-text">AI-assisted search</span>
             </h2>
-            <p className="text-lg max-w-2xl mx-auto" style={{ color: 'var(--text-secondary)' }}>
-              Everything you need to detect, track, and locate missing persons using AI-powered surveillance.
+            <p className="mt-5 text-body">
+              Every surface is built around the operator workflow: register, monitor, detect, review.
             </p>
           </motion.div>
 
@@ -255,50 +287,38 @@ export default function HomePage() {
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true, margin: '-50px' }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            viewport={{ once: true, margin: '-60px' }}
+            className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
           >
             {features.map((feature) => (
-              <motion.div
-                key={feature.title}
-                variants={itemVariants}
-                className="glass-card p-8 group cursor-default flex flex-col"
-                style={{ minHeight: '280px' }}
-              >
-                <div
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg"
-                  style={{ background: feature.bg, border: `1px solid ${feature.borderAccent}` }}
-                >
-                  <feature.icon className="w-7 h-7" style={{ color: feature.color }} />
+              <motion.div key={feature.title} variants={itemVariants} className="glass-card feature-card">
+                <div className="feature-icon">
+                  <feature.icon className={`h-6 w-6 ${feature.tone}`} />
                 </div>
-                <h3 className="text-card-title mb-3" style={{ color: 'var(--text-primary)' }}>
-                  {feature.title}
-                </h3>
-                <p className="text-sm leading-relaxed flex-1" style={{ color: 'var(--text-secondary)' }}>
-                  {feature.description}
-                </p>
+                <h3 className="text-card-title text-white">{feature.title}</h3>
+                <p className="mt-4 flex-1 text-sm leading-7 text-slate-400">{feature.description}</p>
+                <div className="mt-7 h-px w-full bg-gradient-to-r from-violet-400/0 via-violet-300/30 to-cyan-300/0" />
               </motion.div>
             ))}
           </motion.div>
         </div>
       </section>
 
-      {/* ========== HOW IT WORKS ========== */}
-      <section className="relative section-spacing" style={{ background: 'rgba(255,255,255,0.01)' }}>
+      <section className="section-spacing bg-white/[0.015]">
         <div className="container-main">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-100px' }}
-            transition={{ duration: 0.7 }}
-            className="text-center mb-20"
+            viewport={{ once: true, margin: '-80px' }}
+            transition={{ duration: 0.55, ease: 'easeOut' }}
+            className="section-header"
           >
-            <span className="text-overline mb-4 block">Process</span>
-            <h2 className="text-section-title mb-5" style={{ color: 'var(--text-primary)' }}>
-              How It <span className="gradient-text">Works</span>
+            <span className="eyebrow">How it works</span>
+            <h2 className="mt-4 text-section-title text-white">
+              From profile to alert in <span className="gradient-text">four focused steps</span>
             </h2>
-            <p className="text-lg max-w-2xl mx-auto" style={{ color: 'var(--text-secondary)' }}>
-              Four simple steps from registration to real-time detection.
+            <p className="mt-5 text-body">
+              The flow stays simple so response teams can move from case intake to active monitoring quickly.
             </p>
           </motion.div>
 
@@ -306,132 +326,78 @@ export default function HomePage() {
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true, margin: '-50px' }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
+            viewport={{ once: true, margin: '-60px' }}
+            className="timeline-wrap grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
           >
-            {steps.map((step, index) => (
-              <motion.div
-                key={step.step}
-                variants={itemVariants}
-                className="relative"
-              >
-                {/* Horizontal connector (desktop) */}
-                {index < steps.length - 1 && (
-                  <div
-                    className="hidden lg:block absolute top-6 left-[calc(50%+30px)] h-[2px]"
-                    style={{
-                      width: 'calc(100% - 20px)',
-                      background: 'linear-gradient(90deg, rgba(124, 58, 237, 0.4), rgba(124, 58, 237, 0.05))',
-                    }}
-                  />
-                )}
-
-                <div className="glass-card-static p-8 text-center relative overflow-hidden">
-                  {/* Top accent line */}
-                  <div
-                    className="absolute top-0 left-6 right-6 h-[1px]"
-                    style={{ background: 'linear-gradient(90deg, transparent, rgba(124, 58, 237, 0.3), transparent)' }}
-                  />
-
-                  {/* Step number */}
-                  <div className="flex justify-center mb-5">
-                    <div className="timeline-dot">
-                      <step.icon className="w-6 h-6 text-white" />
-                    </div>
-                  </div>
-
-                  <div className="text-xs font-bold mb-3 tracking-widest" style={{ color: 'var(--accent-secondary)' }}>
-                    STEP {step.step}
-                  </div>
-
-                  <h3 className="text-card-title mb-3" style={{ color: 'var(--text-primary)' }}>
-                    {step.title}
-                  </h3>
-                  <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                    {step.description}
-                  </p>
+            {steps.map((step) => (
+              <motion.div key={step.step} variants={itemVariants} className="glass-card-static card-accent-top p-7 text-center">
+                <div className="timeline-dot">
+                  <step.icon className="h-6 w-6 text-white" />
                 </div>
+                <div className="text-sm font-bold text-violet-200">Step {step.step}</div>
+                <h3 className="mt-3 text-card-title text-white">{step.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-400">{step.description}</p>
               </motion.div>
             ))}
           </motion.div>
         </div>
       </section>
 
-      {/* ========== CTA SECTION ========== */}
-      <section className="relative section-spacing">
+      <section className="section-spacing">
         <div className="container-main">
-          <div className="max-w-4xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7 }}
-              className="glass-card-static p-12 sm:p-16 text-center relative overflow-hidden"
-              style={{
-                background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.08), rgba(167, 139, 250, 0.04))',
-                borderColor: 'rgba(124, 58, 237, 0.15)',
-              }}
-            >
-              {/* Background orbs */}
-              <div className="absolute top-0 right-0 w-64 h-64 rounded-full hero-glow"
-                style={{ background: 'radial-gradient(circle, rgba(124, 58, 237, 0.12), transparent 70%)' }} />
-              <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full hero-glow-slow"
-                style={{ background: 'radial-gradient(circle, rgba(167, 139, 250, 0.08), transparent 70%)' }} />
-
-              {/* Top gradient line */}
-              <div className="absolute top-0 left-12 right-12 h-[1px]"
-                style={{ background: 'linear-gradient(90deg, transparent, rgba(124, 58, 237, 0.5), transparent)' }} />
-
-              <div className="relative z-10">
-                <h2 className="text-section-title mb-5" style={{ color: 'var(--text-primary)' }}>
-                  Ready to Make a <span className="gradient-text">Difference</span>?
-                </h2>
-                <p className="text-lg mb-10 max-w-xl mx-auto" style={{ color: 'var(--text-secondary)' }}>
-                  Start using FindSight AI to help locate missing persons faster with the power of artificial intelligence.
-                </p>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                  <Link href="/dashboard">
-                    <motion.button
-                      whileHover={{ scale: 1.04 }}
-                      whileTap={{ scale: 0.97 }}
-                      className="glow-btn btn-shimmer text-base px-10 py-4 flex items-center gap-3 font-semibold"
-                    >
-                      <BarChart3 className="w-5 h-5" />
-                      View Dashboard
-                    </motion.button>
-                  </Link>
-                  <Link href="/register">
-                    <motion.button
-                      whileHover={{ scale: 1.04 }}
-                      whileTap={{ scale: 0.97 }}
-                      className="btn-ghost text-base px-10 py-4 flex items-center gap-3 font-semibold"
-                    >
-                      Register a Case
-                      <ArrowRight className="w-4 h-4" />
-                    </motion.button>
-                  </Link>
-                </div>
-              </div>
-            </motion.div>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-80px' }}
+            transition={{ duration: 0.55, ease: 'easeOut' }}
+            className="glass-card-static cta-panel mx-auto max-w-4xl card-accent-top"
+          >
+            <span className="eyebrow justify-center">Launch command center</span>
+            <h2 className="mx-auto mt-4 max-w-2xl text-section-title text-white">
+              Turn working AI into a product people trust at first glance.
+            </h2>
+            <p className="mx-auto mt-5 max-w-2xl text-body">
+              Open the dashboard for live metrics, or start by registering a missing person profile for monitoring.
+            </p>
+            <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <Link href="/dashboard">
+                <motion.span
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="glow-btn px-8 py-4 text-base"
+                >
+                  <BarChart3 className="h-5 w-5" />
+                  View Dashboard
+                </motion.span>
+              </Link>
+              <Link href="/register">
+                <motion.span
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="btn-ghost px-8 py-4 text-base"
+                >
+                  Register a Case
+                  <ArrowRight className="h-4 w-4" />
+                </motion.span>
+              </Link>
+            </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* ========== FOOTER ========== */}
-      <footer className="py-12 container-main" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+      <footer className="border-t border-white/[0.06] py-10">
+        <div className="container-main flex flex-col items-center justify-between gap-4 sm:flex-row">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #7c3aed, #a78bfa)' }}>
-              <Search className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-sm font-semibold">
+            <span className="logo-mark h-9 w-9">
+              <Search className="h-4 w-4 text-white" />
+            </span>
+            <span className="font-bold">
               <span className="gradient-text">Find</span>
-              <span style={{ color: 'var(--text-primary)' }}>Sight AI</span>
+              <span className="text-white">Sight AI</span>
             </span>
           </div>
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            © {new Date().getFullYear()} FindSight AI — Built for social good.
+          <p className="text-sm text-slate-500">
+            Built for faster search operations and clearer response workflows.
           </p>
         </div>
       </footer>

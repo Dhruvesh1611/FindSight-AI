@@ -23,7 +23,7 @@ const inter = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'FindSight AI — AI-Powered Missing Person Detection',
+  title: 'FindSight AI - AI-Powered Missing Person Detection',
   description: 'Leveraging AI & Computer Vision to locate missing persons faster through real-time surveillance analysis.',
   keywords: ['missing person', 'face recognition', 'AI', 'surveillance', 'detection'],
 };
@@ -36,10 +36,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${inter.variable} font-sans antialiased`}>
-        {/* Noise texture overlay for premium depth */}
+        <div className="page-backdrop" />
         <div className="noise-overlay" />
         <Navbar />
-        <main className="pt-20 min-h-screen">
+        <main className="min-h-screen pt-[76px]">
           {children}
         </main>
         <Toaster

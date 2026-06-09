@@ -1,23 +1,23 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  LayoutDashboard,
-  Users,
-  ScanSearch,
   Activity,
-  Eye,
-  Clock,
-  UserPlus,
   ArrowRight,
+  Clock,
+  Eye,
+  LayoutDashboard,
+  ScanSearch,
   ShieldCheck,
+  UserPlus,
+  Users,
 } from 'lucide-react';
-import Link from 'next/link';
 import Image from 'next/image';
+import Link from 'next/link';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import StatsCard from '@/components/dashboard/StatsCard';
-import { formatDate, formatConfidence, getStatusColor, getConfidenceColor } from '@/lib/utils';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { formatConfidence, formatDate, getConfidenceColor } from '@/lib/utils';
 
 interface DetectionWithPerson {
   _id: string;
@@ -62,7 +62,11 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    fetchStats();
+    const timer = window.setTimeout(() => {
+      void fetchStats();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [fetchStats]);
 
   const chartData = stats?.detectionsByDay?.map((d) => ({
@@ -72,212 +76,193 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="section-spacing">
+      <div className="page-shell">
         <div className="container-main space-y-8">
-          <div className="skeleton h-12 w-72 mb-10" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="flex items-center gap-5">
+            <div className="skeleton h-14 w-14" />
+            <div className="space-y-3">
+              <div className="skeleton h-4 w-32" />
+              <div className="skeleton h-10 w-72" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="skeleton h-40 rounded-2xl" />
+              <div key={i} className="skeleton h-48" />
             ))}
           </div>
-          <div className="skeleton h-80 rounded-2xl" />
-          <div className="skeleton h-72 rounded-2xl" />
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+            <div className="skeleton h-[440px] lg:col-span-2" />
+            <div className="skeleton h-[440px]" />
+          </div>
         </div>
       </div>
     );
   }
 
-  // Calculate "found" persons (total - active)
-  const foundPersons = stats ? (stats.totalPersons - stats.activeSearches) : 0;
+  const foundPersons = stats ? stats.totalPersons - stats.activeSearches : 0;
+  const recentDetections = stats?.recentDetections || [];
 
   return (
-    <div className="section-spacing">
+    <div className="page-shell">
       <div className="container-main">
-        {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col sm:flex-row sm:items-end sm:justify-between mb-12 gap-6"
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className="page-header"
         >
-          <div className="flex items-center gap-5">
-            <div className="p-4 rounded-2xl shadow-inner" style={{ 
-              background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(167, 139, 250, 0.05))',
-              border: '1px solid rgba(124, 58, 237, 0.2)' 
-            }}>
-              <LayoutDashboard className="w-8 h-8" style={{ color: '#a78bfa' }} />
+          <div className="page-title-group">
+            <div className="page-icon">
+              <LayoutDashboard className="h-7 w-7 text-violet-200" />
             </div>
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-overline">Overview</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 live-dot"></span>
+              <div className="mb-2 flex items-center gap-2">
+                <span className="eyebrow">Overview</span>
+                <span className="live-dot text-emerald-300" />
               </div>
-              <h1 className="text-4xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-                Dashboard
-              </h1>
+              <h1 className="text-page-title text-white">Dashboard</h1>
+              <p className="mt-3 max-w-2xl text-body">
+                Monitor registered cases, active searches, and detection activity from one operational view.
+              </p>
             </div>
           </div>
-          <Link href="/register">
-            <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              className="glow-btn flex items-center gap-2"
-            >
-              <UserPlus className="w-4 h-4" />
-              Register New Case
-            </motion.button>
-          </Link>
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Link href="/monitor">
+              <motion.span whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }} className="btn-ghost">
+                <Eye className="h-4 w-4" />
+                Open Monitor
+              </motion.span>
+            </Link>
+            <Link href="/register">
+              <motion.span whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }} className="glow-btn">
+                <UserPlus className="h-4 w-4" />
+                Register New Case
+              </motion.span>
+            </Link>
+          </div>
         </motion.div>
 
-        {/* Stats Cards - 4 Column Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-          <StatsCard
-            title="Registered Cases"
-            value={stats?.totalPersons || 0}
-            icon={Users}
-            color="indigo"
-          />
-          <StatsCard
-            title="Active Searches"
-            value={stats?.activeSearches || 0}
-            icon={Activity}
-            color="amber"
-          />
-          <StatsCard
-            title="Total Detections"
-            value={stats?.totalDetections || 0}
-            icon={ScanSearch}
-            color="emerald"
-          />
-          <StatsCard
-            title="Found Persons"
-            value={foundPersons}
-            icon={ShieldCheck}
-            color="cyan"
-          />
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <StatsCard title="Registered Cases" value={stats?.totalPersons || 0} icon={Users} color="indigo" />
+          <StatsCard title="Active Searches" value={stats?.activeSearches || 0} icon={Activity} color="amber" />
+          <StatsCard title="Total Detections" value={stats?.totalDetections || 0} icon={ScanSearch} color="emerald" />
+          <StatsCard title="Found Persons" value={foundPersons} icon={ShieldCheck} color="cyan" />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Chart Section (Spans 2 columns) */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
+        <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <motion.section
+            initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
-            className="glass-card p-8 lg:col-span-2 card-accent-top flex flex-col"
+            transition={{ delay: 0.12, duration: 0.5, ease: 'easeOut' }}
+            className="glass-card-static card-accent-top flex min-h-[460px] flex-col p-7 lg:col-span-2"
           >
-            <div className="flex items-center justify-between mb-8">
+            <div className="panel-title-row">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-lg" style={{ background: 'rgba(124, 58, 237, 0.1)' }}>
-                  <Activity className="w-5 h-5" style={{ color: '#a78bfa' }} />
+                <div className="feature-icon mb-0 h-11 w-11">
+                  <Activity className="h-5 w-5 text-violet-200" />
                 </div>
-                <h2 className="text-card-title" style={{ color: 'var(--text-primary)' }}>
-                  Detection Activity
-                </h2>
+                <div>
+                  <h2 className="text-card-title text-white">Detection Activity</h2>
+                  <p className="mt-1 text-sm text-slate-500">Daily matches captured by the monitoring workflow.</p>
+                </div>
               </div>
-              <span className="text-xs font-medium px-3 py-1 rounded-full" 
-                style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)' }}>
-                Last 7 Days
-              </span>
+              <span className="status-badge border-white/10 text-slate-300">Last 7 Days</span>
             </div>
 
-            <div className="flex-1 min-h-[300px] w-full">
+            <div className="min-h-[320px] flex-1">
               {chartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <AreaChart data={chartData} margin={{ top: 12, right: 12, left: -18, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorDetections" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#7c3aed" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#a78bfa" stopOpacity={0.38} />
+                        <stop offset="95%" stopColor="#a78bfa" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
-                    <XAxis 
-                      dataKey="date" 
-                      stroke="var(--text-muted)" 
-                      fontSize={12} 
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.055)" />
+                    <XAxis
+                      dataKey="date"
+                      stroke="rgba(183,184,199,0.55)"
+                      fontSize={12}
                       tickLine={false}
                       axisLine={false}
                       dy={10}
                     />
-                    <YAxis 
-                      stroke="var(--text-muted)" 
-                      fontSize={12} 
+                    <YAxis
+                      stroke="rgba(183,184,199,0.55)"
+                      fontSize={12}
                       tickLine={false}
                       axisLine={false}
                     />
                     <Tooltip
                       contentStyle={{
-                        background: 'rgba(17, 17, 25, 0.95)',
+                        background: 'rgba(15, 16, 29, 0.96)',
                         border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: '12px',
-                        color: 'var(--text-primary)',
-                        boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-                        backdropFilter: 'blur(10px)',
+                        borderRadius: '8px',
+                        color: '#f7f7fb',
+                        boxShadow: '0 16px 40px rgba(0,0,0,0.42)',
+                        backdropFilter: 'blur(14px)',
                       }}
                       itemStyle={{ color: '#c4b5fd' }}
+                      labelStyle={{ color: '#b7b8c7' }}
                     />
-                    <Area 
-                      type="monotone" 
-                      dataKey="detections" 
-                      stroke="#a78bfa" 
+                    <Area
+                      type="monotone"
+                      dataKey="detections"
+                      stroke="#c4b5fd"
                       strokeWidth={3}
-                      fillOpacity={1} 
-                      fill="url(#colorDetections)" 
+                      fill="url(#colorDetections)"
                     />
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center py-10">
-                  <Activity className="w-12 h-12 mb-4 opacity-20" style={{ color: 'var(--text-muted)' }} />
-                  <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-                    No detection activity yet
-                  </p>
-                  <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                    Start monitoring to see results
+                <div className="flex h-full min-h-[320px] flex-col items-center justify-center text-center">
+                  <div className="feature-icon">
+                    <Activity className="h-6 w-6 text-slate-500" />
+                  </div>
+                  <h3 className="text-card-title text-white">No detection activity yet</h3>
+                  <p className="mt-3 max-w-sm text-sm leading-6 text-slate-500">
+                    Start monitoring to populate activity trends and confidence signals.
                   </p>
                 </div>
               )}
             </div>
-          </motion.div>
+          </motion.section>
 
-          {/* Recent Detections Section (Spans 1 column) */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
+          <motion.aside
+            initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-            className="glass-card p-8 card-accent-top flex flex-col"
+            transition={{ delay: 0.18, duration: 0.5, ease: 'easeOut' }}
+            className="glass-card-static card-accent-top flex min-h-[460px] flex-col p-7"
           >
-            <div className="flex items-center justify-between mb-6">
+            <div className="panel-title-row">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-lg" style={{ background: 'rgba(16, 185, 129, 0.1)' }}>
-                  <Eye className="w-5 h-5" style={{ color: '#34d399' }} />
+                <div className="feature-icon mb-0 h-11 w-11">
+                  <Eye className="h-5 w-5 text-emerald-300" />
                 </div>
-                <h2 className="text-card-title" style={{ color: 'var(--text-primary)' }}>
-                  Live Feed
-                </h2>
+                <div>
+                  <h2 className="text-card-title text-white">Recent Signals</h2>
+                  <p className="mt-1 text-sm text-slate-500">Latest detection events.</p>
+                </div>
               </div>
-              <Link
-                href="/detections"
-                className="text-xs font-semibold flex items-center gap-1 transition-colors hover:text-white"
-                style={{ color: 'var(--accent-secondary)' }}
-              >
-                View All <ArrowRight className="w-3 h-3" />
+              <Link href="/detections" className="text-sm font-bold text-violet-200 transition-colors hover:text-white">
+                View all
               </Link>
             </div>
 
-            <div className="flex-1 overflow-y-auto pr-2" style={{ maxHeight: '350px' }}>
-              {stats?.recentDetections && stats.recentDetections.length > 0 ? (
+            <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+              {recentDetections.length > 0 ? (
                 <div className="space-y-3">
-                  {stats.recentDetections.map((detection, i) => (
+                  {recentDetections.map((detection, index) => (
                     <motion.div
                       key={detection._id}
-                      initial={{ opacity: 0, x: 20 }}
+                      initial={{ opacity: 0, x: 18 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.4 + (i * 0.1) }}
-                      className="glass-card-subtle p-3 flex items-center gap-4 group"
+                      transition={{ delay: 0.24 + index * 0.06, duration: 0.35 }}
+                      className="glass-card-subtle flex items-center gap-4 p-3"
                     >
-                      {/* Person Photo */}
-                      <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 border border-white/5 group-hover:border-white/10 transition-colors">
+                      <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-md border border-white/10">
                         {detection.personId?.photoUrl ? (
                           <Image
                             src={detection.personId.photoUrl}
@@ -286,58 +271,56 @@ export default function DashboardPage() {
                             className="object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-white/5">
-                            <Users className="w-5 h-5" style={{ color: 'var(--text-muted)' }} />
+                          <div className="flex h-full w-full items-center justify-center bg-white/5">
+                            <Users className="h-5 w-5 text-slate-500" />
                           </div>
                         )}
-                        {/* Status indicator dot */}
-                        <div className={`absolute bottom-1 right-1 w-2.5 h-2.5 rounded-full border-2 border-black ${detection.personId?.status === 'found' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                        <span
+                          className={`absolute bottom-1 right-1 h-2.5 w-2.5 rounded-full border-2 border-black ${
+                            detection.personId?.status === 'found' ? 'bg-emerald-400' : 'bg-amber-400'
+                          }`}
+                        />
                       </div>
 
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate" style={{ color: 'var(--text-primary)' }}>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold text-white">
                           {detection.personId?.name || 'Unknown'}
                         </p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Clock className="w-3 h-3" style={{ color: 'var(--text-muted)' }} />
-                          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                            {formatDate(detection.timestamp)}
-                          </span>
+                        <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
+                          <Clock className="h-3.5 w-3.5" />
+                          <span className="truncate">{formatDate(detection.timestamp)}</span>
                         </div>
                       </div>
 
-                      {/* Confidence */}
-                      <div className="text-right flex-shrink-0 flex flex-col items-end">
+                      <div className="text-right">
                         <p className={`text-sm font-bold ${getConfidenceColor(detection.confidenceScore)}`}>
                           {formatConfidence(detection.confidenceScore)}
                         </p>
-                        <span className="text-[10px] uppercase font-bold tracking-wider mt-1" style={{ color: 'var(--text-muted)' }}>
-                          Match
-                        </span>
+                        <p className="mt-1 text-xs text-slate-500">match</p>
                       </div>
                     </motion.div>
                   ))}
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center py-10">
-                  <ScanSearch className="w-10 h-10 mb-4 opacity-20" style={{ color: 'var(--text-muted)' }} />
-                  <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-                    No detections yet
+                <div className="flex h-full min-h-[300px] flex-col items-center justify-center text-center">
+                  <div className="feature-icon">
+                    <ScanSearch className="h-6 w-6 text-slate-500" />
+                  </div>
+                  <h3 className="text-card-title text-white">No signals recorded</h3>
+                  <p className="mt-3 max-w-xs text-sm leading-6 text-slate-500">
+                    Camera feeds are quiet. Open the monitor to begin detection.
                   </p>
-                  <p className="text-xs mt-1 mb-6" style={{ color: 'var(--text-muted)' }}>
-                    Camera feeds are currently quiet
-                  </p>
-                  <Link href="/monitor">
-                    <button className="btn-ghost py-2 px-4 text-xs flex items-center gap-2">
-                      <Eye className="w-4 h-4" />
+                  <Link href="/monitor" className="mt-6">
+                    <span className="btn-ghost px-4 py-2 text-sm">
+                      <Eye className="h-4 w-4" />
                       Open Monitor
-                    </button>
+                      <ArrowRight className="h-4 w-4" />
+                    </span>
                   </Link>
                 </div>
               )}
             </div>
-          </motion.div>
+          </motion.aside>
         </div>
       </div>
     </div>

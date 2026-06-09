@@ -1,16 +1,22 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Camera,
-  Users,
   Activity,
   AlertTriangle,
+  Camera,
   Clock,
+  Cpu,
+  Database,
+  Gauge,
+  Image as ImageIcon,
+  Play,
   Scan,
-  Zap,
   ShieldAlert,
+  Square,
+  Users,
+  Zap,
 } from 'lucide-react';
 import Image from 'next/image';
 import CameraFeed from '@/components/camera/CameraFeed';
@@ -35,6 +41,7 @@ interface ActivePerson {
 }
 
 export default function MonitorPage() {
+  const demoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [lastMatch, setLastMatch] = useState<MatchResult | null>(null);
@@ -44,7 +51,6 @@ export default function MonitorPage() {
   const [showAlert, setShowAlert] = useState(false);
   const [activePersons, setActivePersons] = useState<ActivePerson[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [demoInterval, setDemoInterval] = useState<NodeJS.Timeout | null>(null);
   const [alertData, setAlertData] = useState<{
     personName: string;
     confidence: number;
@@ -53,7 +59,6 @@ export default function MonitorPage() {
     personPhoto?: string;
   } | null>(null);
 
-  // Fetch active missing persons
   useEffect(() => {
     const fetchPersons = async () => {
       try {
@@ -68,23 +73,25 @@ export default function MonitorPage() {
     };
     fetchPersons();
 
-    // Cleanup demo interval on unmount
     return () => {
-      if (demoInterval) clearInterval(demoInterval);
+      if (demoIntervalRef.current) {
+        clearInterval(demoIntervalRef.current);
+        demoIntervalRef.current = null;
+      }
     };
-  }, [demoInterval]);
+  }, []);
 
-  // Demo mode simulation
   useEffect(() => {
-    if (isDemoMode && isMonitoring && activePersons.length > 0) {
-      if (demoInterval) clearInterval(demoInterval);
+    if (demoIntervalRef.current) {
+      clearInterval(demoIntervalRef.current);
+      demoIntervalRef.current = null;
+    }
 
-      // Simulate a match every 5-8 seconds
+    if (isDemoMode && isMonitoring && activePersons.length > 0) {
       const interval = setInterval(async () => {
         const randomPerson = activePersons[Math.floor(Math.random() * activePersons.length)];
-        const confidence = 0.80 + Math.random() * 0.19; // 0.80 - 0.99
+        const confidence = 0.80 + Math.random() * 0.19;
 
-        // Create a dummy captured image (solid color placeholder)
         const canvas = document.createElement('canvas');
         canvas.width = 1280;
         canvas.height = 720;
@@ -92,12 +99,9 @@ export default function MonitorPage() {
         if (ctx) {
           ctx.fillStyle = `hsl(${Math.random() * 360}, 50%, 30%)`;
           ctx.fillRect(0, 0, 1280, 720);
-          // Add some text
           ctx.fillStyle = '#ffffff';
           ctx.font = '24px Inter, sans-serif';
           ctx.fillText('Demo Surveillance Frame - ' + new Date().toLocaleTimeString(), 40, 60);
-          
-          // Draw a face box
           ctx.strokeStyle = '#10b981';
           ctx.lineWidth = 4;
           ctx.strokeRect(500, 200, 280, 320);
@@ -132,20 +136,20 @@ export default function MonitorPage() {
           style: {
             background: 'rgba(153, 27, 27, 0.9)',
             border: '1px solid rgba(239, 68, 68, 0.5)',
-          }
+          },
         });
       }, 6000 + Math.random() * 4000);
 
-      setDemoInterval(interval);
-    } else if (demoInterval && !isDemoMode) {
-      clearInterval(demoInterval);
-      setDemoInterval(null);
+      demoIntervalRef.current = interval;
     }
 
     return () => {
-      if (demoInterval) clearInterval(demoInterval);
+      if (demoIntervalRef.current) {
+        clearInterval(demoIntervalRef.current);
+        demoIntervalRef.current = null;
+      }
     };
-  }, [isDemoMode, isMonitoring, activePersons, demoInterval]);
+  }, [isDemoMode, isMonitoring, activePersons]);
 
   const handleFrameCapture = useCallback(async (imageData: string) => {
     if (isProcessing) return;
@@ -170,7 +174,6 @@ export default function MonitorPage() {
         if (result.matched && result.confidence > 0.6) {
           setMatchCount((prev) => prev + 1);
 
-          // Find the matched person
           const matchedPerson = activePersons.find((p) => p._id === result.person_id);
 
           setAlertData({
@@ -188,7 +191,7 @@ export default function MonitorPage() {
             style: {
               background: 'rgba(153, 27, 27, 0.9)',
               border: '1px solid rgba(239, 68, 68, 0.5)',
-            }
+            },
           });
         }
       }
@@ -226,114 +229,101 @@ export default function MonitorPage() {
     }
   };
 
+  const confidence = lastMatch?.confidence || 0;
+  const confidenceStyle = { '--value': `${confidence * 100}%` } as CSSProperties;
+  const statusLabel = isMonitoring ? (isProcessing ? 'Analyzing frame' : 'Live monitoring') : 'Standby';
+
   return (
-    <div className="section-spacing">
+    <div className="page-shell">
       <div className="container-main">
-        {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -14 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row sm:items-end sm:justify-between mb-8 gap-6"
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className="page-header"
         >
-          <div className="flex items-center gap-5">
-            <div className="p-4 rounded-2xl shadow-inner" style={{ 
-              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(52, 211, 153, 0.05))',
-              border: '1px solid rgba(16, 185, 129, 0.2)' 
-            }}>
-              <ShieldAlert className="w-8 h-8" style={{ color: '#34d399' }} />
+          <div className="page-title-group">
+            <div className="page-icon">
+              <ShieldAlert className="h-7 w-7 text-emerald-200" />
             </div>
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-overline tracking-widest text-emerald-400">Command Center</span>
-                <span className={`w-2 h-2 rounded-full ${isMonitoring ? 'bg-emerald-500 live-dot' : 'bg-gray-500'}`}></span>
+              <div className="mb-2 flex items-center gap-2">
+                <span className="eyebrow text-emerald-200">Command Center</span>
+                <span className={`live-dot ${isMonitoring ? 'text-emerald-300' : 'text-slate-500'}`} />
               </div>
-              <h1 className="text-4xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-                Surveillance Terminal
-              </h1>
+              <h1 className="text-page-title text-white">Surveillance Monitor</h1>
+              <p className="mt-3 max-w-2xl text-body">
+                Watch the live camera feed, track detection confidence, and review matching activity in real time.
+              </p>
             </div>
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
+              type="button"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setIsDemoMode(!isDemoMode)}
-              className="flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all"
-              style={{
-                background: isDemoMode ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                border: isDemoMode ? '1px solid rgba(251, 191, 36, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
-                color: isDemoMode ? '#fcd34d' : 'var(--text-secondary)',
-              }}
+              className={`btn-ghost ${isDemoMode ? 'border-amber-300/30 bg-amber-500/10 text-amber-200' : ''}`}
               title="Toggle demo mode for simulated detections"
             >
-              <Zap className="w-4 h-4" />
-              <span>SIMULATE</span>
+              <Zap className="h-4 w-4" />
+              Simulation
             </motion.button>
 
             <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
+              type="button"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setIsMonitoring(!isMonitoring)}
-              className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold tracking-wide transition-all shadow-lg ${
-                isMonitoring 
-                  ? 'bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500/30 shadow-red-500/20' 
-                  : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 hover:bg-emerald-500/30 shadow-emerald-500/20'
-              }`}
+              className={isMonitoring ? 'glow-btn glow-btn-danger' : 'glow-btn glow-btn-success'}
             >
               {isMonitoring ? (
                 <>
-                  <ShieldAlert className="w-5 h-5" />
-                  HALT SCAN
+                  <Square className="h-4 w-4" />
+                  Stop Scan
                 </>
               ) : (
                 <>
-                  <Scan className="w-5 h-5" />
-                  INITIATE SCAN
+                  <Play className="h-4 w-4" />
+                  Start Scan
                 </>
               )}
             </motion.button>
           </div>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Main Feed Area (8 columns) */}
-          <div className="lg:col-span-8 space-y-8">
-            <div className="glass-card p-2 rounded-[28px] card-accent-top">
+        <div className="monitor-grid">
+          <div className="space-y-6">
+            <motion.section
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              className="glass-card-static card-accent-top p-2"
+            >
               <CameraFeed
                 onFrameCapture={isDemoMode ? undefined : handleFrameCapture}
-                captureInterval={2000} // Faster capture rate for more responsive feel
+                captureInterval={2000}
                 isMonitoring={isMonitoring}
               />
-            </div>
+            </motion.section>
 
-            {/* System Status Banner */}
             <AnimatePresence mode="wait">
               {isDemoMode && isMonitoring ? (
                 <motion.div
                   key="demo"
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="p-5 rounded-2xl flex items-center gap-4 shadow-lg"
-                  style={{
-                    background: 'linear-gradient(90deg, rgba(251, 191, 36, 0.1), rgba(251, 191, 36, 0.02))',
-                    borderLeft: '4px solid #fbbf24',
-                    borderTop: '1px solid rgba(251, 191, 36, 0.2)',
-                    borderRight: '1px solid rgba(251, 191, 36, 0.1)',
-                    borderBottom: '1px solid rgba(251, 191, 36, 0.1)',
-                  }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="glass-card-static flex items-start gap-4 border-amber-300/20 bg-amber-500/10 p-5"
                 >
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-                    className="p-2 bg-amber-500/20 rounded-lg"
-                  >
-                    <Zap className="w-6 h-6 text-amber-400" />
-                  </motion.div>
+                  <div className="feature-icon mb-0 h-11 w-11 border-amber-300/20 bg-amber-500/10">
+                    <Zap className="h-5 w-5 text-amber-200" />
+                  </div>
                   <div>
-                    <h3 className="font-bold text-amber-400 uppercase tracking-widest text-sm mb-1">Simulation Mode Active</h3>
-                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      Generating synthetic frame data and injecting mock face encodings for demonstration.
+                    <h3 className="font-bold text-amber-100">Simulation mode active</h3>
+                    <p className="mt-1 text-sm leading-6 text-amber-100/70">
+                      Synthetic frame matches are being generated from active profiles for demonstration.
                     </p>
                   </div>
                 </motion.div>
@@ -342,26 +332,20 @@ export default function MonitorPage() {
                   key="processing"
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="p-5 rounded-2xl flex items-center gap-4"
-                  style={{
-                    background: 'linear-gradient(90deg, rgba(124, 58, 237, 0.1), rgba(124, 58, 237, 0.02))',
-                    borderLeft: '4px solid #7c3aed',
-                    borderTop: '1px solid rgba(124, 58, 237, 0.2)',
-                    borderRight: '1px solid rgba(124, 58, 237, 0.1)',
-                    borderBottom: '1px solid rgba(124, 58, 237, 0.1)',
-                  }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="glass-card-static flex items-start gap-4 border-violet-300/20 bg-violet-500/10 p-5"
                 >
                   <motion.div
                     animate={{ rotate: 360 }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                    transition={{ duration: 1.4, repeat: Infinity, ease: 'linear' }}
+                    className="feature-icon mb-0 h-11 w-11 border-violet-300/20 bg-violet-500/10"
                   >
-                    <Scan className="w-6 h-6" style={{ color: '#a78bfa' }} />
+                    <Scan className="h-5 w-5 text-violet-200" />
                   </motion.div>
                   <div>
-                    <h3 className="font-bold uppercase tracking-widest text-sm mb-1" style={{ color: '#c4b5fd' }}>Neural Analysis</h3>
-                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      Extracting facial embeddings from current frame and computing cosine similarity against active case database...
+                    <h3 className="font-bold text-violet-100">Neural analysis running</h3>
+                    <p className="mt-1 text-sm leading-6 text-violet-100/70">
+                      Current frame is being compared against active case embeddings.
                     </p>
                   </div>
                 </motion.div>
@@ -369,168 +353,232 @@ export default function MonitorPage() {
             </AnimatePresence>
           </div>
 
-          {/* Intel Sidebar (4 columns) */}
-          <div className="lg:col-span-4 space-y-8">
-            {/* Telemetry Stats */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
+          <aside className="space-y-6">
+            <motion.section
+              initial={{ opacity: 0, x: 18 }}
               animate={{ opacity: 1, x: 0 }}
-              className="glass-card p-6 card-accent-top"
+              transition={{ delay: 0.08, duration: 0.5, ease: 'easeOut' }}
+              className="glass-card-static monitor-panel card-accent-top"
             >
-              <h3 className="text-sm font-bold uppercase tracking-widest mb-6 flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
-                <Activity className="w-4 h-4" style={{ color: '#a78bfa' }} />
-                Session Telemetry
-              </h3>
-
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="glass-card-subtle p-4 rounded-xl relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
-                  <p className="text-xs uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Frames Analyzed</p>
-                  <p className="text-3xl font-bold font-mono" style={{ color: '#c4b5fd' }}>{String(frameCount).padStart(4, '0')}</p>
+              <div className="panel-title-row">
+                <div className="flex items-center gap-3">
+                  <div className="feature-icon mb-0 h-11 w-11">
+                    <Gauge className="h-5 w-5 text-violet-200" />
+                  </div>
+                  <div>
+                    <h2 className="text-card-title text-white">Live Status</h2>
+                    <p className="mt-1 text-sm text-slate-500">{statusLabel}</p>
+                  </div>
                 </div>
-                <div className="glass-card-subtle p-4 rounded-xl relative overflow-hidden">
-                  <div className={`absolute top-0 left-0 w-1 h-full ${matchCount > 0 ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
-                  <p className="text-xs uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Matches</p>
-                  <p className="text-3xl font-bold font-mono" style={{ color: matchCount > 0 ? '#fca5a5' : '#6ee7b7' }}>
-                    {String(matchCount).padStart(2, '0')}
-                  </p>
+                <span className={`status-badge ${isMonitoring ? 'border-emerald-300/30 text-emerald-200' : 'border-white/10 text-slate-400'}`}>
+                  <span className={`live-dot ${isMonitoring ? 'text-emerald-300' : 'text-slate-500'}`} />
+                  {isMonitoring ? 'Online' : 'Idle'}
+                </span>
+              </div>
+
+              <div className="flex flex-col items-center gap-6 sm:flex-row lg:flex-col xl:flex-row">
+                <div className="confidence-ring" style={confidenceStyle}>
+                  <div className="text-center">
+                    <div className={`text-2xl font-bold ${lastMatch ? getConfidenceColor(confidence) : 'text-slate-500'}`}>
+                      {formatConfidence(confidence)}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-500">confidence</div>
+                  </div>
+                </div>
+                <div className="w-full flex-1">
+                  <div className="mb-3 flex items-center justify-between text-sm">
+                    <span className="font-semibold text-slate-300">Match confidence</span>
+                    <span className={lastMatch ? getConfidenceColor(confidence) : 'text-slate-500'}>
+                      {lastMatch ? formatConfidence(confidence) : 'No signal'}
+                    </span>
+                  </div>
+                  <div className="confidence-meter">
+                    <div
+                      className="confidence-meter-fill"
+                      style={{
+                        width: `${confidence * 100}%`,
+                        background: confidence >= 0.8
+                          ? 'linear-gradient(90deg, #10b981, #34d399)'
+                          : confidence >= 0.6
+                          ? 'linear-gradient(90deg, #f59e0b, #fbbf24)'
+                          : 'linear-gradient(90deg, #7c3aed, #a78bfa)',
+                      }}
+                    />
+                  </div>
+                  <div className="mt-5 grid grid-cols-2 gap-3">
+                    <div className="glass-card-subtle p-4">
+                      <div className="text-3xl font-bold text-white">{String(frameCount).padStart(4, '0')}</div>
+                      <div className="mt-1 text-sm text-slate-500">Frames</div>
+                    </div>
+                    <div className="glass-card-subtle p-4">
+                      <div className={`text-3xl font-bold ${matchCount > 0 ? 'text-rose-200' : 'text-emerald-200'}`}>
+                        {String(matchCount).padStart(2, '0')}
+                      </div>
+                      <div className="mt-1 text-sm text-slate-500">Matches</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.section>
+
+            <motion.section
+              initial={{ opacity: 0, x: 18 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.14, duration: 0.5, ease: 'easeOut' }}
+              className="glass-card-static monitor-panel card-accent-top"
+            >
+              <div className="panel-title-row">
+                <div className="flex items-center gap-3">
+                  <div className="feature-icon mb-0 h-11 w-11">
+                    <Activity className="h-5 w-5 text-cyan-200" />
+                  </div>
+                  <div>
+                    <h2 className="text-card-title text-white">Detection Activity</h2>
+                    <p className="mt-1 text-sm text-slate-500">Latest vector result.</p>
+                  </div>
                 </div>
               </div>
 
-              {/* Last Match Status */}
-              <div className="mt-4 border-t border-white/5 pt-4">
-                <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>
-                  Latest Vector Result
-                </p>
-                
-                {lastMatch ? (
-                  <div className={`p-4 rounded-xl border ${lastMatch.matched ? 'bg-red-500/10 border-red-500/30' : 'glass-card-subtle'}`}>
-                    {lastMatch.matched ? (
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <AlertTriangle className="w-5 h-5 text-red-400" />
-                          <div>
-                            <p className="text-sm font-bold text-red-400">POSITIVE HIT</p>
-                            <p className="text-xs text-red-400/70">{lastMatch.person_name}</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className={`text-xl font-bold font-mono ${getConfidenceColor(lastMatch.confidence)}`}>
-                            {formatConfidence(lastMatch.confidence)}
-                          </p>
-                          <p className="text-[10px] uppercase text-red-400/50 tracking-wider">Confidence</p>
-                        </div>
-                      </div>
-                    ) : (
+              {lastMatch ? (
+                <div className={`rounded-md border p-4 ${lastMatch.matched ? 'border-rose-300/25 bg-rose-500/10' : 'border-white/[0.08] bg-white/[0.03]'}`}>
+                  {lastMatch.matched ? (
+                    <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
-                        <Scan className="w-5 h-5 text-emerald-400/50" />
-                        <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-                          {lastMatch.message || 'No vectors crossed threshold'}
-                        </p>
+                        <div className="feature-icon mb-0 h-11 w-11 border-rose-300/20 bg-rose-500/10">
+                          <AlertTriangle className="h-5 w-5 text-rose-200" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-rose-100">Positive hit</p>
+                          <p className="mt-1 text-sm text-rose-100/70">{lastMatch.person_name}</p>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="glass-card-subtle p-4 rounded-xl flex items-center justify-center h-20">
-                    <p className="text-sm text-center" style={{ color: 'var(--text-muted)' }}>Awaiting first detection cycle</p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
+                      <div className="text-right">
+                        <p className={`text-xl font-bold ${getConfidenceColor(lastMatch.confidence)}`}>
+                          {formatConfidence(lastMatch.confidence)}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">confidence</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <div className="feature-icon mb-0 h-11 w-11">
+                        <Scan className="h-5 w-5 text-emerald-200" />
+                      </div>
+                      <p className="text-sm leading-6 text-slate-300">
+                        {lastMatch.message || 'No vectors crossed threshold'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="glass-card-subtle flex min-h-24 items-center justify-center p-4 text-center">
+                  <p className="text-sm text-slate-500">Awaiting first detection cycle.</p>
+                </div>
+              )}
+            </motion.section>
 
-            {/* Target Database */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
+            <motion.section
+              initial={{ opacity: 0, x: 18 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 }}
-              className="glass-card flex flex-col overflow-hidden"
-              style={{ maxHeight: '400px' }}
+              transition={{ delay: 0.2, duration: 0.5, ease: 'easeOut' }}
+              className="glass-card-static card-accent-top overflow-hidden"
             >
-              <div className="p-6 pb-4 border-b border-white/5">
-                <h3 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
-                  <Users className="w-4 h-4" style={{ color: '#fbbf24' }} />
-                  Target Database
-                  <span className="ml-auto px-2 py-0.5 rounded-full bg-white/10 text-xs text-white">
-                    {activePersons.length}
-                  </span>
-                </h3>
+              <div className="border-b border-white/[0.06] p-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="feature-icon mb-0 h-10 w-10">
+                      <Database className="h-5 w-5 text-amber-200" />
+                    </div>
+                    <div>
+                      <h2 className="text-card-title text-white">Monitoring Panel</h2>
+                      <p className="mt-1 text-sm text-slate-500">Active search profiles.</p>
+                    </div>
+                  </div>
+                  <span className="status-badge border-white/10 text-slate-300">{activePersons.length} active</span>
+                </div>
               </div>
 
-              <div className="p-4 overflow-y-auto flex-1">
+              <div className="max-h-[360px] overflow-y-auto p-4">
                 {activePersons.length > 0 ? (
                   <div className="space-y-3">
                     {activePersons.map((person) => (
-                      <div
-                        key={person._id}
-                        className="flex items-center gap-4 p-3 rounded-xl border border-transparent hover:border-white/10 transition-colors bg-white/5"
-                      >
-                        <div className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-white/10">
-                          <Image
-                            src={person.photoUrl}
-                            alt={person.name}
-                            fill
-                            className="object-cover"
-                          />
+                      <div key={person._id} className="glass-card-subtle flex items-center gap-4 p-3">
+                        <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-md border border-white/10">
+                          <Image src={person.photoUrl} alt={person.name} fill className="object-cover" />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>
-                            {person.name}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-bold text-white">{person.name}</p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            ID {person._id.substring(person._id.length - 6).toUpperCase()}
                           </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-white/10" style={{ color: 'var(--text-muted)' }}>
-                              ID: {person._id.substring(person._id.length - 6).toUpperCase()}
-                            </span>
-                          </div>
                         </div>
-                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] flex-shrink-0" />
+                        <span className="live-dot text-emerald-300" />
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-10">
-                    <Users className="w-12 h-12 mx-auto mb-3 opacity-20" style={{ color: 'var(--text-muted)' }} />
-                    <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-                      Database empty
-                    </p>
-                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                      Register cases to begin matching
-                    </p>
+                  <div className="flex min-h-44 flex-col items-center justify-center text-center">
+                    <Users className="mb-4 h-10 w-10 text-slate-600" />
+                    <p className="font-semibold text-slate-300">No active profiles</p>
+                    <p className="mt-2 text-sm text-slate-500">Register cases to begin matching.</p>
                   </div>
                 )}
               </div>
-            </motion.div>
+            </motion.section>
 
-            {/* Frame Buffer */}
             {lastCapturedImage && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
+              <motion.section
+                initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-card p-4"
+                className="glass-card-static monitor-panel card-accent-top"
               >
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
-                    <Camera className="w-3.5 h-3.5" />
-                    Frame Buffer
-                  </p>
-                  <span className="text-[10px] font-mono text-indigo-400">MEM_0x{Math.floor(Math.random() * 10000).toString(16).toUpperCase()}</span>
+                <div className="panel-title-row">
+                  <div className="flex items-center gap-3">
+                    <div className="feature-icon mb-0 h-10 w-10">
+                      <ImageIcon className="h-5 w-5 text-violet-200" />
+                    </div>
+                    <div>
+                      <h2 className="text-card-title text-white">Frame Buffer</h2>
+                      <p className="mt-1 text-sm text-slate-500">Latest captured frame.</p>
+                    </div>
+                  </div>
+                  <Clock className="h-4 w-4 text-slate-500" />
                 </div>
-                <div className="relative rounded-xl overflow-hidden border border-white/10 aspect-video">
-                  <Image
-                    src={lastCapturedImage}
-                    alt="Last captured"
-                    fill
-                    className="object-cover"
-                  />
-                  {/* Digital overlay grid */}
-                  <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+CjxyZWN0IHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMSkiIHN0cm9rZS13aWR0aD0iMSIvPgo8L3N2Zz4=')] opacity-30 pointer-events-none"></div>
+                <div className="relative aspect-video overflow-hidden rounded-md border border-white/10">
+                  <Image src={lastCapturedImage} alt="Last captured frame" fill className="object-cover" />
+                  <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.055)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.055)_1px,transparent_1px)] bg-[size:24px_24px] opacity-40" />
                 </div>
-              </motion.div>
+              </motion.section>
             )}
-          </div>
+
+            <motion.section
+              initial={{ opacity: 0, x: 18 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.26, duration: 0.5, ease: 'easeOut' }}
+              className="glass-card-static monitor-panel"
+            >
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="glass-card-subtle p-3">
+                  <Cpu className="mx-auto mb-2 h-4 w-4 text-violet-200" />
+                  <p className="text-xs text-slate-500">Model</p>
+                  <p className="mt-1 text-sm font-bold text-white">Face AI</p>
+                </div>
+                <div className="glass-card-subtle p-3">
+                  <Camera className="mx-auto mb-2 h-4 w-4 text-emerald-200" />
+                  <p className="text-xs text-slate-500">Source</p>
+                  <p className="mt-1 text-sm font-bold text-white">Browser</p>
+                </div>
+                <div className="glass-card-subtle p-3">
+                  <Scan className="mx-auto mb-2 h-4 w-4 text-cyan-200" />
+                  <p className="text-xs text-slate-500">Interval</p>
+                  <p className="mt-1 text-sm font-bold text-white">2s</p>
+                </div>
+              </div>
+            </motion.section>
+          </aside>
         </div>
       </div>
 
-      {/* Alert Modal */}
       <AlertModal
         isOpen={showAlert}
         onClose={() => setShowAlert(false)}

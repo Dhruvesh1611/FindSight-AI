@@ -14,44 +14,39 @@ interface StatsCardProps {
 
 const colorMap = {
   indigo: {
-    bg: 'rgba(124, 58, 237, 0.04)',
-    border: 'rgba(124, 58, 237, 0.15)',
-    iconBg: 'rgba(124, 58, 237, 0.15)',
-    iconColor: '#a78bfa',
-    glow: 'rgba(124, 58, 237, 0.3)',
-    text: '#c4b5fd',
+    border: 'rgba(139, 92, 246, 0.28)',
+    iconBg: 'rgba(139, 92, 246, 0.14)',
+    iconColor: '#c4b5fd',
+    accent: '#a78bfa',
+    wash: 'linear-gradient(135deg, rgba(139, 92, 246, 0.14), rgba(139, 92, 246, 0.02))',
   },
   emerald: {
-    bg: 'rgba(16, 185, 129, 0.04)',
-    border: 'rgba(16, 185, 129, 0.15)',
-    iconBg: 'rgba(16, 185, 129, 0.15)',
-    iconColor: '#34d399',
-    glow: 'rgba(16, 185, 129, 0.3)',
-    text: '#6ee7b7',
+    border: 'rgba(16, 185, 129, 0.26)',
+    iconBg: 'rgba(16, 185, 129, 0.13)',
+    iconColor: '#6ee7b7',
+    accent: '#34d399',
+    wash: 'linear-gradient(135deg, rgba(16, 185, 129, 0.13), rgba(16, 185, 129, 0.02))',
   },
   amber: {
-    bg: 'rgba(245, 158, 11, 0.04)',
-    border: 'rgba(245, 158, 11, 0.15)',
-    iconBg: 'rgba(245, 158, 11, 0.15)',
-    iconColor: '#fbbf24',
-    glow: 'rgba(245, 158, 11, 0.3)',
-    text: '#fcd34d',
+    border: 'rgba(245, 158, 11, 0.27)',
+    iconBg: 'rgba(245, 158, 11, 0.13)',
+    iconColor: '#fcd34d',
+    accent: '#fbbf24',
+    wash: 'linear-gradient(135deg, rgba(245, 158, 11, 0.13), rgba(245, 158, 11, 0.02))',
   },
   rose: {
-    bg: 'rgba(239, 68, 68, 0.04)',
-    border: 'rgba(239, 68, 68, 0.15)',
-    iconBg: 'rgba(239, 68, 68, 0.15)',
-    iconColor: '#f87171',
-    glow: 'rgba(239, 68, 68, 0.3)',
-    text: '#fca5a5',
+    border: 'rgba(244, 63, 94, 0.28)',
+    iconBg: 'rgba(244, 63, 94, 0.13)',
+    iconColor: '#fda4af',
+    accent: '#fb7185',
+    wash: 'linear-gradient(135deg, rgba(244, 63, 94, 0.13), rgba(244, 63, 94, 0.02))',
   },
   cyan: {
-    bg: 'rgba(6, 182, 212, 0.04)',
-    border: 'rgba(6, 182, 212, 0.15)',
-    iconBg: 'rgba(6, 182, 212, 0.15)',
-    iconColor: '#22d3ee',
-    glow: 'rgba(6, 182, 212, 0.3)',
-    text: '#67e8f9',
+    border: 'rgba(34, 211, 238, 0.26)',
+    iconBg: 'rgba(34, 211, 238, 0.12)',
+    iconColor: '#67e8f9',
+    accent: '#22d3ee',
+    wash: 'linear-gradient(135deg, rgba(34, 211, 238, 0.12), rgba(34, 211, 238, 0.02))',
   },
 };
 
@@ -60,68 +55,49 @@ export default function StatsCard({ title, value, icon: Icon, trend, trendUp, co
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -6, scale: 1.02 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className="glass-card p-8 cursor-default relative overflow-hidden"
+      whileHover={{ y: -6 }}
+      transition={{ duration: 0.36, ease: 'easeOut' }}
+      className="glass-card card-accent-top flex min-h-[190px] flex-col overflow-hidden p-7"
       style={{
-        background: colors.bg,
         borderColor: colors.border,
+        background: `${colors.wash}, rgba(14, 15, 27, 0.74)`,
       }}
     >
-      {/* Top Accent Gradient */}
-      <div 
-        className="absolute top-0 left-0 right-0 h-[2px]" 
-        style={{ 
-          background: `linear-gradient(90deg, transparent, ${colors.glow}, transparent)`,
-          opacity: 0.5 
-        }} 
-      />
-
-      {/* Subtle Background Glow */}
-      <div 
-        className="absolute -top-10 -right-10 w-32 h-32 rounded-full blur-3xl"
-        style={{ background: colors.glow, opacity: 0.15 }}
-      />
-
-      <div className="flex flex-col h-full relative z-10">
-        <div className="flex items-start justify-between mb-4">
-          <p className="text-sm font-medium tracking-wide" style={{ color: 'var(--text-muted)' }}>
-            {title}
-          </p>
-          <div
-            className="p-3 rounded-xl shadow-inner"
-            style={{ 
-              background: colors.iconBg,
-              border: `1px solid ${colors.border}` 
-            }}
-          >
-            <Icon className="w-5 h-5" style={{ color: colors.iconColor }} />
-          </div>
+      <div className="flex items-start justify-between gap-5">
+        <div>
+          <p className="text-sm font-semibold text-slate-400">{title}</p>
+          <p className="stat-value mt-5 text-white">{value}</p>
         </div>
+        <div
+          className="grid h-12 w-12 place-items-center rounded-md border"
+          style={{ background: colors.iconBg, borderColor: colors.border }}
+        >
+          <Icon className="h-5 w-5" style={{ color: colors.iconColor }} />
+        </div>
+      </div>
 
-        <div className="mt-auto">
-          <p className="stat-value" style={{ color: 'var(--text-primary)' }}>
-            {value}
-          </p>
-          
-          {trend && (
-            <div className="flex items-center gap-2 mt-3">
-              <span 
-                className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold"
-                style={{ 
-                  background: trendUp ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                  color: trendUp ? '#34d399' : '#f87171' 
-                }}
-              >
-                {trendUp ? '↑' : '↓'} {trend}
-              </span>
-              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                vs last month
-              </span>
-            </div>
-          )}
+      <div className="mt-auto pt-6">
+        {trend ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className="rounded-full border px-2.5 py-1 text-xs font-bold"
+              style={{
+                background: trendUp ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)',
+                borderColor: trendUp ? 'rgba(16, 185, 129, 0.22)' : 'rgba(244, 63, 94, 0.22)',
+                color: trendUp ? '#6ee7b7' : '#fda4af',
+              }}
+            >
+              {trendUp ? '+' : '-'} {trend}
+            </span>
+            <span className="text-xs text-slate-500">vs last month</span>
+          </div>
+        ) : (
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-white/12 to-transparent" />
+        )}
+        <div className="mt-4 h-1 rounded-full bg-white/5">
+          <div className="h-full w-2/3 rounded-full" style={{ background: colors.accent }} />
         </div>
       </div>
     </motion.div>
