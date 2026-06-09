@@ -19,6 +19,18 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 import StatsCard from '@/components/dashboard/StatsCard';
 import { formatConfidence, formatDate, getConfidenceColor } from '@/lib/utils';
 
+interface PersonRecord {
+  _id: string;
+  name: string;
+  age: number;
+  gender: string;
+  lastSeenLocation: string;
+  photoUrl: string;
+  status: 'searching' | 'found' | 'closed';
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface DetectionWithPerson {
   _id: string;
   personId: {
@@ -45,7 +57,9 @@ interface StatsData {
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<StatsData | null>(null);
+  const [persons, setPersons] = useState<PersonRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingPersons, setLoadingPersons] = useState(true);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -61,20 +75,41 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const fetchPersons = useCallback(async () => {
+    try {
+      setLoadingPersons(true);
+      const res = await fetch('/api/persons?limit=100');
+      const data = await res.json();
+      if (data.success) {
+        setPersons(data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch person directory:', error);
+    } finally {
+      setLoadingPersons(false);
+    }
+  }, []);
+
   useEffect(() => {
     const timer = window.setTimeout(() => {
       void fetchStats();
+      void fetchPersons();
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [fetchStats]);
+  }, [fetchStats, fetchPersons]);
 
   const chartData = stats?.detectionsByDay?.map((d) => ({
     date: d._id.slice(5),
     detections: d.count,
   })) || [];
 
-  if (loading) {
+  const searchingCount = persons.filter((person) => person.status === 'searching').length;
+  const foundCount = persons.filter((person) => person.status === 'found').length;
+  const closedCount = persons.filter((person) => person.status === 'closed').length;
+  const totalPersons = persons.length;
+
+  if (loading || loadingPersons) {
     return (
       <div className="page-shell">
         <div className="container-main space-y-8">
@@ -150,12 +185,12 @@ export default function DashboardPage() {
           <StatsCard title="Found Persons" value={foundPersons} icon={ShieldCheck} color="cyan" />
         </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
+        <div className="mt-8 grid grid-cols-1 gap-8 xl:grid-cols-4">
           <motion.section
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.12, duration: 0.5, ease: 'easeOut' }}
-            className="glass-card-static card-accent-top flex min-h-[460px] flex-col p-7 lg:col-span-2"
+            className="glass-card-static card-accent-top flex min-h-[460px] flex-col p-7 xl:col-span-3"
           >
             <div className="panel-title-row">
               <div className="flex items-center gap-3">

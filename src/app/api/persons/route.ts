@@ -110,3 +110,48 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// PUT /api/persons — Update a missing person's status or details
+export async function PUT(request: NextRequest) {
+  try {
+    await dbConnect();
+
+    const body = await request.json();
+    const { personId, status } = body;
+
+    if (!personId || !status) {
+      return NextResponse.json(
+        { success: false, error: 'personId and status are required' },
+        { status: 400 }
+      );
+    }
+
+    if (!['searching', 'found', 'closed'].includes(status)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid status value' },
+        { status: 400 }
+      );
+    }
+
+    const updated = await MissingPerson.findByIdAndUpdate(
+      personId,
+      { status },
+      { new: true }
+    ).lean();
+
+    if (!updated) {
+      return NextResponse.json(
+        { success: false, error: 'Person not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ success: true, data: updated, message: 'Person status updated successfully' });
+  } catch (error) {
+    console.error('Error updating person status:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to update person status' },
+      { status: 500 }
+    );
+  }
+}

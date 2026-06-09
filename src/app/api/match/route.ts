@@ -5,7 +5,8 @@ import MissingPerson from '@/models/MissingPerson';
 export const dynamic = 'force-dynamic';
 
 // POST /api/match — Compare a captured frame against stored face encodings
-// For MVP: Supports both browser face-api.js encoding and demo mode
+// This implementation: calls external AI service to obtain an embedding for the
+// captured image, then computes cosine similarity against stored encodings.
 export async function POST(request: NextRequest) {
   try {
     await dbConnect();
@@ -20,27 +21,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Demo mode: simulate a match for hackathon presentation
+    // Demo mode: preserve previous behavior when explicitly requested
     if (demoMode && demoPersonId) {
       const person = await MissingPerson.findById(demoPersonId).lean();
-
       if (!person) {
-        return NextResponse.json({
-          success: true,
-          data: {
-            matched: false,
-            confidence: 0,
-            message: 'Demo person not found',
-          },
-        });
+        return NextResponse.json({ success: true, data: { matched: false, confidence: 0, message: 'Demo person not found' } });
       }
-
-      // Simulate a confident match in demo mode
       return NextResponse.json({
         success: true,
         data: {
           matched: true,
-          confidence: 0.85 + Math.random() * 0.14, // 0.85 - 0.99
+          confidence: 0.85 + Math.random() * 0.14,
           person_id: person._id.toString(),
           person_name: person.name,
           message: 'Demo match simulated',
@@ -48,58 +39,72 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Get all persons for matching
-    const persons = await MissingPerson.find({
-      status: 'searching',
-    }).lean();
+    // Fetch all active persons with encodings
+    const persons = await MissingPerson.find({ status: 'searching' }).lean();
 
-    if (persons.length === 0) {
-      return NextResponse.json({
-        success: true,
-        data: {
-          matched: false,
-          confidence: 0,
-          message: 'No registered persons found',
-        },
-      });
+    if (!persons || persons.length === 0) {
+      return NextResponse.json({ success: true, data: { matched: false, confidence: 0, message: 'No registered persons found' } });
     }
 
-    // For MVP: Simple heuristic-based matching (no Python service required)
-    // Pick a random high-confidence match from registered persons
-    // In production, this would use face-api.js encoding or Python service
-    
-    // Simulate occasional matches for demo purposes
-    const matchProbability = 0.1; // 10% chance of match per frame
-    if (Math.random() < matchProbability && persons.length > 0) {
-      const randomPerson = persons[Math.floor(Math.random() * persons.length)];
-      const confidence = 0.75 + Math.random() * 0.24; // 0.75 - 0.99
+    // Collect persons that have embeddings
+    const candidates = persons.filter((p) => Array.isArray(p.faceEncoding) && p.faceEncoding.length > 0);
 
-      return NextResponse.json({
-        success: true,
-        data: {
-          matched: true,
-          confidence,
-          person_id: randomPerson._id.toString(),
-          person_name: randomPerson.name,
-          message: 'Face match detected',
-        },
-      });
+    if (candidates.length === 0) {
+      return NextResponse.json({ success: true, data: { matched: false, confidence: 0, message: 'No stored face encodings available' } });
     }
 
-    // No match
-    return NextResponse.json({
-      success: true,
-      data: {
-        matched: false,
-        confidence: 0,
-        message: 'No face match detected',
-      },
-    });
+    // Call external AI service's /match endpoint with stored encodings
+    const aiServiceUrl = process.env.AI_SERVICE_URL || process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8000';
+
+    // Prepare stored encodings payload
+    const stored_encodings = candidates.map((p) => ({
+      personId: p._id.toString(),
+      personName: p.name,
+      encoding: p.faceEncoding,
+    }));
+
+    try {
+      const resp = await fetch(`${aiServiceUrl.replace(/\/$/, '')}/match`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ captured_image: capturedImage, stored_encodings }),
+      });
+
+      if (resp.ok) {
+        const json = await resp.json();
+        // Expecting { matched, confidence, person_id, person_name, message }
+        if (json && json.matched) {
+          return NextResponse.json({
+            success: true,
+            data: {
+              matched: true,
+              confidence: typeof json.confidence === 'number' ? json.confidence : Number(json.confidence) || 0,
+              person_id: json.person_id || json.personId || null,
+              person_name: json.person_name || json.personName || null,
+              message: json.message || 'Face match detected',
+            },
+          });
+        }
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            matched: false,
+            confidence: typeof json.confidence === 'number' ? json.confidence : Number(json.confidence) || 0,
+            message: json.message || 'No match above threshold',
+          },
+        });
+      } else {
+        console.warn('AI service /match returned non-OK');
+      }
+    } catch (err) {
+      console.error('AI service match call failed:', err);
+    }
+
+    // Fallback: AI service not available or failed
+    return NextResponse.json({ success: true, data: { matched: false, confidence: 0, message: 'AI service unavailable for matching' } });
   } catch (error) {
     console.error('Error in match endpoint:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to process face match' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: 'Failed to process face match' }, { status: 500 });
   }
 }
