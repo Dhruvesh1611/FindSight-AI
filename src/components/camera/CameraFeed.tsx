@@ -14,7 +14,7 @@ export default function CameraFeed({ onFrameCapture, captureInterval = 3000, isM
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const faceDetectorRef = useRef<FaceDetector | null>(null);
+const faceDetectorRef = useRef<any>(null);
   const intervalRef = useRef<number | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +39,7 @@ export default function CameraFeed({ onFrameCapture, captureInterval = 3000, isM
       }
 
       const windowWithDetector = window as unknown as {
-        FaceDetector?: new (options?: { fastMode: boolean; maxDetectedFaces: number }) => FaceDetector;
+        FaceDetector?: any;
       };
       const Detector = windowWithDetector.FaceDetector;
       if (Detector) {
