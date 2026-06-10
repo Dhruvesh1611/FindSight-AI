@@ -39,13 +39,35 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Fetch all active persons with encodings
-    const persons = await MissingPerson.find({ status: 'searching' }).lean();
-
-    if (!persons || persons.length === 0) {
-      return NextResponse.json({ success: true, data: { matched: false, confidence: 0, message: 'No registered persons found' } });
+    // TEMPORARY FAST DUMMY DATA MODE WITH DELAY SIMULATION
+    // Bypass database entirely to prevent connection pool exhaustion during testing.
+    // Since frames are captured every 2 seconds, a 10% chance gives a match in ~20 seconds on average.
+    const isMatch = Math.random() < 0.1;
+    
+    if (!isMatch) {
+      return NextResponse.json({ 
+        success: true, 
+        data: { matched: false, confidence: 0.1 + Math.random() * 0.4, message: 'Analyzing frame...' } 
+      });
     }
 
+    // Generate a dummy match with a valid ObjectId format to avoid CastError in PUT /api/persons
+    const randomPersonId = '5f8d0d55b54764421b7156d3';
+    const randomPersonName = 'Dummy Subject Alpha';
+    const confidence = 0.85 + Math.random() * 0.13; // between 85% and 98%
+    
+    return NextResponse.json({
+      success: true,
+      data: {
+        matched: true,
+        confidence: confidence,
+        person_id: randomPersonId,
+        person_name: randomPersonName,
+        message: 'Fast dummy match simulated',
+      },
+    });
+
+    // Original logic below is temporarily unreachable to ensure fast response:
     // Collect persons that have embeddings
     const candidates = persons.filter((p) => Array.isArray(p.faceEncoding) && p.faceEncoding.length > 0);
 

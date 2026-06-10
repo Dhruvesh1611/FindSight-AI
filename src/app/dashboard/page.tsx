@@ -57,9 +57,7 @@ interface StatsData {
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<StatsData | null>(null);
-  const [persons, setPersons] = useState<PersonRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingPersons, setLoadingPersons] = useState(true);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -75,41 +73,20 @@ export default function DashboardPage() {
     }
   }, []);
 
-  const fetchPersons = useCallback(async () => {
-    try {
-      setLoadingPersons(true);
-      const res = await fetch('/api/persons?limit=100');
-      const data = await res.json();
-      if (data.success) {
-        setPersons(data.data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch person directory:', error);
-    } finally {
-      setLoadingPersons(false);
-    }
-  }, []);
-
   useEffect(() => {
     const timer = window.setTimeout(() => {
       void fetchStats();
-      void fetchPersons();
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [fetchStats, fetchPersons]);
+  }, [fetchStats]);
 
   const chartData = stats?.detectionsByDay?.map((d) => ({
     date: d._id.slice(5),
     detections: d.count,
   })) || [];
 
-  const searchingCount = persons.filter((person) => person.status === 'searching').length;
-  const foundCount = persons.filter((person) => person.status === 'found').length;
-  const closedCount = persons.filter((person) => person.status === 'closed').length;
-  const totalPersons = persons.length;
-
-  if (loading || loadingPersons) {
+  if (loading) {
     return (
       <div className="page-shell">
         <div className="container-main space-y-8">
