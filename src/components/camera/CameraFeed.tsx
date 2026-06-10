@@ -14,7 +14,8 @@ export default function CameraFeed({ onFrameCapture, captureInterval = 3000, isM
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const faceDetectorRef = useRef<FaceDetector | null>(null);
+  const intervalRef = useRef<number | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
@@ -36,6 +37,21 @@ export default function CameraFeed({ onFrameCapture, captureInterval = 3000, isM
         streamRef.current = stream;
         setIsStreaming(true);
       }
+
+      const windowWithDetector = window as unknown as {
+        FaceDetector?: new (options?: { fastMode: boolean; maxDetectedFaces: number }) => FaceDetector;
+      };
+      const Detector = windowWithDetector.FaceDetector;
+      if (Detector) {
+        try {
+          faceDetectorRef.current = new Detector({ fastMode: true, maxDetectedFaces: 1 });
+        } catch (faceError) {
+          console.warn('FaceDetector initialization failed:', faceError);
+          faceDetectorRef.current = null;
+        }
+      } else {
+        faceDetectorRef.current = null;
+      }
     } catch (err) {
       console.error('Camera error:', err);
       setError('Unable to access camera. Please grant camera permissions.');
@@ -52,19 +68,25 @@ export default function CameraFeed({ onFrameCapture, captureInterval = 3000, isM
       videoRef.current.srcObject = null;
     }
     if (intervalRef.current) {
-      clearInterval(intervalRef.current);
+      window.clearInterval(intervalRef.current);
       intervalRef.current = null;
+    }
+    if (detectionIntervalRef.current) {
+      window.clearInterval(detectionIntervalRef.current);
+      detectionIntervalRef.current = null;
     }
     setIsStreaming(false);
   }, []);
+  const detectionIntervalRef = useRef<number | null>(null);
+  const facePresentRef = useRef(false);
 
-  const captureFrame = useCallback(() => {
+  // Capture a full-resolution frame and send to handler
+  const captureFullFrame = useCallback(() => {
     if (!videoRef.current || !canvasRef.current || !onFrameCapture) return;
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-
     if (!ctx) return;
 
     canvas.width = video.videoWidth;
@@ -75,26 +97,89 @@ export default function CameraFeed({ onFrameCapture, captureInterval = 3000, isM
     onFrameCapture(imageData);
   }, [onFrameCapture]);
 
+  // Detection loop: run on a small canvas to check for face presence
+  const detCanvasRef = useRef<HTMLCanvasElement>(null);
+
+  const detectLoop = useCallback(async () => {
+    if (!videoRef.current || !detCanvasRef.current || !faceDetectorRef.current) return;
+
+    const video = videoRef.current;
+    const detCanvas = detCanvasRef.current;
+    const dctx = detCanvas.getContext('2d');
+    if (!dctx) return;
+
+    // Downscale for faster detection
+    const targetW = 320;
+    const ratio = video.videoHeight && video.videoWidth ? video.videoHeight / video.videoWidth : 0.5625;
+    const targetH = Math.max(240, Math.round(targetW * ratio));
+    detCanvas.width = targetW;
+    detCanvas.height = targetH;
+    dctx.drawImage(video, 0, 0, targetW, targetH);
+
+    try {
+      const faces = await faceDetectorRef.current.detect(detCanvas);
+      const found = Array.isArray(faces) && faces.length > 0;
+        if (found && !facePresentRef.current) {
+        facePresentRef.current = true;
+        // start full-frame capture every captureInterval
+        if (!intervalRef.current) {
+          // eslint-disable-next-line react-hooks/immutability
+          intervalRef.current = window.setInterval(captureFullFrame, captureInterval);
+        }
+      } else if (!found && facePresentRef.current) {
+        facePresentRef.current = false;
+        if (intervalRef.current) {
+          window.clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+      }
+    } catch (err) {
+      console.warn('Face detection error in loop:', err);
+    }
+  }, [captureFullFrame, captureInterval]);
+
   useEffect(() => {
-    if (isStreaming && isMonitoring) {
-      intervalRef.current = setInterval(captureFrame, captureInterval);
-    } else if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+    const DETECTION_INTERVAL_MS = 700;
+    // If we have a native detector, run detect loop frequently; otherwise fall back to regular captures
+    if (isStreaming && isMonitoring && onFrameCapture) {
+      if (faceDetectorRef.current) {
+        // start detect loop
+        if (!detectionIntervalRef.current) {
+          // eslint-disable-next-line react-hooks/immutability
+          detectionIntervalRef.current = window.setInterval(detectLoop, DETECTION_INTERVAL_MS);
+        }
+      } else {
+        // fallback: capture at the configured captureInterval
+        if (!intervalRef.current) {
+          intervalRef.current = window.setInterval(captureFullFrame, captureInterval);
+        }
+      }
     }
 
     return () => {
       if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      if (detectionIntervalRef.current) {
+        window.clearInterval(detectionIntervalRef.current);
+        detectionIntervalRef.current = null;
       }
     };
-  }, [isStreaming, isMonitoring, captureFrame, captureInterval]);
+  }, [isStreaming, isMonitoring, onFrameCapture, detectLoop, captureFullFrame, captureInterval]);
 
   useEffect(() => {
     return () => {
       stopCamera();
     };
   }, [stopCamera]);
+
+  useEffect(() => {
+    if (isMonitoring && !isStreaming) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      void startCamera();
+    }
+  }, [isMonitoring, isStreaming, startCamera]);
 
   const toggleCamera = () => {
     setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'));
@@ -160,7 +245,7 @@ export default function CameraFeed({ onFrameCapture, captureInterval = 3000, isM
           <div className="absolute right-5 top-5 flex items-center gap-2">
             <button
               type="button"
-              onClick={captureFrame}
+              onClick={captureFullFrame}
               className="btn-ghost min-h-0 bg-black/35 px-3 py-3"
               title="Manual capture"
             >
@@ -209,6 +294,7 @@ export default function CameraFeed({ onFrameCapture, captureInterval = 3000, isM
       </div>
 
       <canvas ref={canvasRef} className="hidden" />
+      <canvas ref={detCanvasRef} className="hidden" />
 
       {isStreaming && (
         <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">

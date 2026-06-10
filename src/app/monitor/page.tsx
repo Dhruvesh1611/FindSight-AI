@@ -151,6 +151,22 @@ export default function MonitorPage() {
     };
   }, [isDemoMode, isMonitoring, activePersons]);
 
+  const updatePersonStatus = useCallback(async (personId: string, status: 'found' | 'searching' | 'closed') => {
+    try {
+      const response = await fetch('/api/persons', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ personId, status }),
+      });
+      const result = await response.json();
+      if (!result.success) {
+        console.warn('Failed to update person status:', result.error);
+      }
+    } catch (error) {
+      console.error('Error updating person status:', error);
+    }
+  }, []);
+
   const handleFrameCapture = useCallback(async (imageData: string) => {
     if (isProcessing) return;
 
@@ -176,6 +192,11 @@ export default function MonitorPage() {
 
           const matchedPerson = activePersons.find((p) => p._id === result.person_id);
 
+          if (result.person_id) {
+            await updatePersonStatus(result.person_id, 'found');
+            setActivePersons((prev) => prev.filter((person) => person._id !== result.person_id));
+          }
+
           setAlertData({
             personName: result.person_name || matchedPerson?.name || 'Unknown',
             confidence: result.confidence,
@@ -200,7 +221,7 @@ export default function MonitorPage() {
     } finally {
       setIsProcessing(false);
     }
-  }, [isProcessing, activePersons]);
+  }, [isProcessing, activePersons, updatePersonStatus]);
 
   const handleSaveDetection = async () => {
     if (!alertData || !lastMatch?.person_id) return;
